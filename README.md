@@ -1,0 +1,2 @@
+*Kategoryzacja artykułów Wikipedii*
+TODO
