@@ -2,21 +2,21 @@ package pl.gda.pg.eti.kask.kaw
 
 import scala.collection.JavaConversions._
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.IntWritable
+import org.apache.hadoop.io.Text
+import org.apache.hadoop.mapreduce.Job
+import org.apache.hadoop.mapreduce.Mapper
+import org.apache.hadoop.mapreduce.Reducer
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 
 class WordCountTask extends ClusterTask {
-	override def runTask(args: Array[String]): Int = {
-		val conf = new Configuration();
+	override def runTask(conf: Configuration, args: Array[String]): Int = {
 		val job = Job.getInstance(conf, "Word count in Scala");
-		job.setJarByClass(classOf[WordCountTask])
+		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
+		//job.setJarByClass(classOf[WordCountTask])
 		job.setMapperClass(classOf[TokenizerMapper])
 		job.setCombinerClass(classOf[IntSumReducer])
 		job.setReducerClass(classOf[IntSumReducer])
