@@ -31,7 +31,7 @@ object CategorizationApplicationObject {
 						val task = new WordCountTask
 						System.exit(task.runTask(conf, b.toArray))
 					} else {
-						val task = new CountStringTask
+						val task = new WordCountTask
 						System.exit(task.runTask(conf, b.toArray))
 					}
 
