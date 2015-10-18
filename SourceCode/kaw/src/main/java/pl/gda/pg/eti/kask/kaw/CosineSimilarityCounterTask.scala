@@ -49,6 +49,6 @@ class CosineReducer extends Reducer[IntWritable, Word, Text, IntWritable] {
 	private val counter = new CosineSimilarityIndexCounter
 	
 	override def reduce(key: IntWritable, values: java.lang.Iterable[Word], context: Reducer[IntWritable, Word, Text, IntWritable]#Context): Unit = {
-		counter.countSimilarity(key.get, values, context)
+		//counter.countSimilarity(key.get, values, context)
 	}
 }

@@ -30,7 +30,20 @@ class CategoryFinder {
 			case e: Exception => //TODO obsluz wyjatek
 		}
 		// TODO zwroc wynik wyszukiwania
-		null
+		//TEMPORARY FOR TESTING //
+		val r = scala.util.Random
+	  var random = r.nextDouble
+	  
+	  if(random < 0.25) {
+      return List("Nauka", "Technika", "Religia")
+    } else if (random < 0.5) {
+      return List("Ekonomia", "Technika", "Religia", "Nauka")
+    } else if (random < 0.75) {
+      return List("Filozofia", "Nauka", "Religia", "Historia", "Polska")
+    } else {
+      return List("Polska", "Biografie", "Geografia", "Nauki scisłe i przyrodnicze")
+    } 
+		//TEMPORARY FOR TESTING //
 		// ======================================== //
 	}
 	
