@@ -16,16 +16,36 @@ class MatrixuOutputParser {
 		// ======================================== //
 		// TODO wyciagnij z linijki artykul i slowo //
 		// razem z wystepowaniem					//
-		val article = 0
-		val word = new Word(0, 0)
+//		val article = 0
+//		var word = new Word(0, 0)
 		// ======================================== //
 		
+		val tmpArticleWords = line.split("# ")
+		
+		val article = tmpArticleWords(0).toInt
 		val key = new IntWritable
 		key.set(article)
 		
-		context.write(key, word)
+		val tmpWords = tmpArticleWords(1).split(" ").map {
+		  x =>
+		  val value = x.split("-")
+		  val word = new Word(value(0).toInt, value(1).toInt)
+		  context.write(key, word)
+		}
 	}
 	
+	def parse(line: String) {
+		val tmpArticleWords = line.split("# ")
+		
+		val article = tmpArticleWords(0).toInt
+		val tmpWords = tmpArticleWords(1).split(" ").map {
+		  x =>
+		  val value = x.split("-")
+		  val word = new Word(value(0).toInt, value(1).toInt)
+		  println(word.getId)
+		  println(word.getCount)
+		}
+	}
 }
 
 class Word(private var id: Int, private var count: Int) extends Writable {
