@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS wikiclassifier.page;
 DROP TABLE IF EXISTS wikiclassifier.words;
 
 CREATE TABLE wikiclassifier.categorylinks (
+  cl_id decimal(8) not null,
   cl_from DECIMAL(8) NOT NULL DEFAULT '0',
   cl_to varchar(255) NOT NULL DEFAULT '',
   cl_sortkey varchar(230) NOT NULL DEFAULT '',
@@ -13,7 +14,7 @@ CREATE TABLE wikiclassifier.categorylinks (
   cl_sortkey_prefix varchar(255) NOT NULL DEFAULT '',
   cl_collation VARCHAR(32) NOT NULL DEFAULT '',
   cl_type VARCHAR(6) NOT NULL DEFAULT 'page',
-  CONSTRAINT pk_categorylinks PRIMARY KEY (cl_from, cl_to)
+  CONSTRAINT pk_categorylinks PRIMARY KEY (cl_id)
 );
 
 -- wiki 2011
