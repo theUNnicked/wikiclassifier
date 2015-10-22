@@ -68,8 +68,19 @@ class TokenizerMapper extends Mapper[Object, Text, Text, IntWritable] {
 
 class IntSumReducer extends Reducer[Text, Text, Text, IntWritable] {
 
-	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, IntWritable, Text, IntWritable]#Context): Unit = {
-		val sum = values.foldLeft(0) { (sum, v) => sum + new String(v.getBytes, 0, v.getLength).toInt }
-		context.write(key, new IntWritable(sum))
+	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, Text, Text, IntWritable]#Context): Unit = {
+		var keyString = key.toString
+		if(key.contains("\\\\:Cat")) {
+			values.foreach { value =>
+				val title = keyString.replace("\\\\:Cat", "")
+				val fullValue = "::Cat\t"+value
+				context.write(new Text(title), new Text(fullValue))
+			}
+		}
+		else {
+			val sum = values.foldLeft(0) { (sum, v) => sum + v.toString.toInt }
+			val split = keyString.toString.split("\\")
+			context.write(new Text(split(0)), new Text(split(1) + sum.toString))
+		}
 	}
 }

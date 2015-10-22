@@ -21,15 +21,15 @@ class ArticleReader(private val xmlFile: String, private val outputFolder: Strin
       // TODO: local
       var file = new File(outputFolder)
       if(file.exists()) {
-        if(file.isDirectory()) {
-          FileUtils.deleteDirectory(file);
+        if(file.isDirectory {
+          FileUtils.deleteDirectory(file)
         }
         else {
-          throw new Exception("File exists and is not a directory.");
+          throw new Exception("File exists and is not a directory.")
         }
       }
       else {
-        file.mkdir();
+        file.mkdir
       }
 
       val handler = new ArticleWikiHandler(outputFolder)
@@ -92,6 +92,40 @@ class ArticleWikiHandler(private val outputFolder: String) extends DefaultHandle
 
 }
 
+class DistributedArticleReader(private val xmlFile: String, private val outputFolder: String, private val configuration: Configuration) {
+
+  def readAndUpload() {
+    try {
+      val factory = SAXParserFactory.newInstance
+      val parser = factory.newSAXParser
+
+      FileSystem hdfs = FileSystem.get(configuration)
+      Path homeDir = hdfs.getHomeDirectory
+
+      // TODO: local
+      var file = new Path(outputFolder)
+      if(hdfs.exists(file)) {
+        if(hdfs.isDirectory(file)) {
+          hdfs.delete(file, true)
+        }
+        else {
+          throw new Exception("File exists and is not a directory.")
+        }
+      }
+      else {
+        file.mkdirs(file)
+      }
+
+      val handler = new ArticleWikiHandler(outputFolder)
+      parser.parse(xmlFile, handler)
+    }
+    catch {
+      case e: Exception => e.printStackTrace
+    }
+  }
+
+
+}
 
 class DistributedArticleWikiHandler(private val outputFolder: String, private val clusterConfiguration: Configuration) extends DefaultHandler {
 
