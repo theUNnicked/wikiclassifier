@@ -9,6 +9,7 @@ import scala.util.matching.Regex
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.PrintWriter
+import org.apache.hadoop.conf.Configuration
 
 class ArticleReader(private val xmlFile: String, private val outputFolder: String, private val local: Boolean) {
 
@@ -44,7 +45,6 @@ class ArticleReader(private val xmlFile: String, private val outputFolder: Strin
 class ArticleWikiHandler(private val outputFolder: String) extends DefaultHandler {
 
   private var articleName = ""
-  private var categories = List[String]()
   private var text = ""
   private var onTextElement = false
   private var onTitleElement = false
@@ -88,18 +88,55 @@ class ArticleWikiHandler(private val outputFolder: String) extends DefaultHandle
     builder.append(string)
   }
 
-  private def cutCategories {
-    val reg = """(\[\[Kategoria:.+\]\])""".r
-    val all = reg.findAllIn(text)
-    all.foreach { x => getCategoryAndInsert(x) }
-    text = reg.replaceAllIn(text, "")
+
+
+}
+
+
+class DistributedArticleWikiHandler(private val outputFolder: String, private val clusterConfiguration: Configuration) extends DefaultHandler {
+
+  private var articleName = ""
+  private var text = ""
+  private var onTextElement = false
+  private var onTitleElement = false
+  private val builder = new StringBuilder
+
+  @throws[SAXException]
+  override def startElement(uri: String, localName: String, qName: String, attributes: Attributes)  {
+    if(qName.equalsIgnoreCase("text")) {
+      onTextElement = true
+    }
+    if(qName.equalsIgnoreCase("title")) {
+      onTitleElement = true
+    }
   }
 
-  private def getCategoryAndInsert(categoryString: String) {
-    val start = """(\[\[Kategoria:)""".r
-    val end = """(\]\])""".r
-    val category = start.replaceAllIn(end.replaceAllIn(categoryString, ""), "")
-    categories = categories :+ category
+  @throws[SAXException]
+  override def endElement(uri: String, localName: String, qName: String)  {
+    if(qName.equalsIgnoreCase("text")) {
+      onTextElement = false
+      text = builder.toString
+      builder.setLength(0)
+      var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "");
+      new PrintWriter(outputFolder + "/" + newfile) { write(text); close }
+      //cutCategories
+      // TODO: wysylanie
+    }
+    if(qName.equalsIgnoreCase("title")) {
+      onTitleElement = false
+      articleName = builder.toString
+      builder.setLength(0)
+    }
+  }
+
+  @throws[SAXException]
+  override def characters(ch: Array[Char], start: Int, length: Int) {
+    if(!onTextElement && !onTitleElement) {
+      return;
+    }
+
+    val string = new String(ch, start, length)
+    builder.append(string)
   }
 
 }
