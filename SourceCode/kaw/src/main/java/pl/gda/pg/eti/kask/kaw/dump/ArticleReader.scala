@@ -6,15 +6,32 @@ import org.xml.sax.Attributes
 import org.xml.sax.SAXException
 import org.xml.sax.helpers.DefaultHandler
 import scala.util.matching.Regex
+import org.apache.commons.io.FileUtils
+import java.io.File
+import java.io.PrintWriter
 
-class ArticleReader(private val xmlFile: String) {
+class ArticleReader(private val xmlFile: String, private val outputFolder: String, private val local: Boolean) {
 
   def readAndUpload() {
     try {
       val factory = SAXParserFactory.newInstance
-      val parser = SAXParser.newSAXParser
+      val parser = factory.newSAXParser
 
-      val handler = new ArticleWikiHandler
+      // TODO: local
+      var file = new File(outputFolder)
+      if(file.exists()) {
+        if(file.isDirectory()) {
+          FileUtils.deleteDirectory(file);
+        }
+        else {
+          throw new Exception("File exists and is not a directory.");
+        }
+      }
+      else {
+        file.mkdir();
+      }
+
+      val handler = new ArticleWikiHandler(outputFolder)
       parser.parse(xmlFile, handler)
     }
     catch {
@@ -24,10 +41,10 @@ class ArticleReader(private val xmlFile: String) {
 
 }
 
-class ArticleWikiHandler extends DefaultHandler {
+class ArticleWikiHandler(private val outputFolder: String) extends DefaultHandler {
 
   private var articleName = ""
-  private var categories = List[String]
+  private var categories = List[String]()
   private var text = ""
   private var onTextElement = false
   private var onTitleElement = false
@@ -49,12 +66,14 @@ class ArticleWikiHandler extends DefaultHandler {
       onTextElement = false
       text = builder.toString
       builder.setLength(0)
-      cutCategories
+      var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "");
+      new PrintWriter(outputFolder + "/" + newfile) { write(text); close }
+      //cutCategories
       // TODO: wysylanie
     }
     if(qName.equalsIgnoreCase("title")) {
       onTitleElement = false
-      title = builder.toString
+      articleName = builder.toString
       builder.setLength(0)
     }
   }

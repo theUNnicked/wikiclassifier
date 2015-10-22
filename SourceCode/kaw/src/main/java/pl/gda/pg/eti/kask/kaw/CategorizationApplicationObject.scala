@@ -3,14 +3,22 @@ package pl.gda.pg.eti.kask.kaw
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.conf.Configuration
 import java.security.PrivilegedExceptionAction
+import pl.gda.pg.eti.kask.kaw.dump.ArticleReader
 //import org.slf4j.Logger
 
 object CategorizationApplicationObject {
-	
+
 	private val USER_NAME = "143351sw"
 //	private val logger = Logger.getLogger(CategorizationApplicationObject.getClass)
-	
+
 	def main(args: Array[String]): Unit = {
+
+		if(args(0).equals("--dump")) {
+			if(args(1).equals("--local")) {
+				new ArticleReader(args(2), args(3), true).readAndUpload();
+				return;
+			}
+		}
 
 		val ugi = UserGroupInformation.createRemoteUser(USER_NAME)
 		try {
