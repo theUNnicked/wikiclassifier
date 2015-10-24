@@ -99,8 +99,8 @@ class DistributedArticleReader(private val xmlFile: String, private val outputFo
       val factory = SAXParserFactory.newInstance
       val parser = factory.newSAXParser
 
-      FileSystem hdfs = FileSystem.get(configuration)
-      Path homeDir = hdfs.getHomeDirectory
+      val hdfs = FileSystem.get(configuration)
+      val homeDir = hdfs.getHomeDirectory
 
       // TODO: local
       var file = new Path(outputFolder)
@@ -127,7 +127,7 @@ class DistributedArticleReader(private val xmlFile: String, private val outputFo
 
 }
 
-class DistributedArticleWikiHandler(private val outputFolder: String, private val clusterConfiguration: Configuration) extends DefaultHandler {
+class DistributedArticleWikiHandler(private val outputFolder: String, private val clusterConfiguration: Configuration, private val hdfs FileSystem) extends DefaultHandler {
 
   private var articleName = ""
   private var text = ""
@@ -151,8 +151,11 @@ class DistributedArticleWikiHandler(private val outputFolder: String, private va
       onTextElement = false
       text = builder.toString
       builder.setLength(0)
-      var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "");
-      new PrintWriter(outputFolder + "/" + newfile) { write(text); close }
+      var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "")
+      val outStream = hdfs.create(outputFolder + "/" + newfile)
+      out.write(text)
+      out.close
+
       //cutCategories
       // TODO: wysylanie
     }
