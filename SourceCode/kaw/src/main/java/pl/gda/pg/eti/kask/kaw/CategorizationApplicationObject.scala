@@ -35,6 +35,9 @@ object CategorizationApplicationObject {
 					conf.set("yarn.resourcemanager.address", "des01.eti.pg.gda.pl:8032");
 					conf.set("yarn.resourcemanager.scheduler.address", "des01.eti.pg.gda.pl:8030")
 
+					conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName())
+					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
+
 					if (args(0).equals("--dump")) {
 						val hdfs = FileSystem.get(conf)
 						new DistributedArticleReader(args(1), args(2), hdfs).readAndUpload();
