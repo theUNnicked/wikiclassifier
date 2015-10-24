@@ -9,171 +9,191 @@ import scala.util.matching.Regex
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.PrintWriter
-import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.Path
+import org.slf4j.LoggerFactory
 
-class ArticleReader(private val xmlFile: String, private val outputFolder: String, private val local: Boolean) {
+class ArticleReader(private val xmlFile: String, private val outputFolder: String) {
 
-  def readAndUpload() {
-    try {
-      val factory = SAXParserFactory.newInstance
-      val parser = factory.newSAXParser
+	def readAndUpload() {
+		try {
+			val factory = SAXParserFactory.newInstance
+			val parser = factory.newSAXParser
 
-      // TODO: local
-      var file = new File(outputFolder)
-      if(file.exists()) {
-        if(file.isDirectory {
-          FileUtils.deleteDirectory(file)
-        }
-        else {
-          throw new Exception("File exists and is not a directory.")
-        }
-      }
-      else {
-        file.mkdir
-      }
+			ArticleReader.logger.debug("Tworzenie lokalnego folderu {}", outputFolder)
+			var file = new File(outputFolder)
+			if (file.exists()) {
+				if (file.isDirectory) {
+					ArticleReader.logger.debug("Folder {} istnieje, usuwam z zawartoscia", outputFolder)
+					FileUtils.deleteDirectory(file)
+				}
+				else {
+					throw new Exception("File exists and is not a directory.")
+				}
+			}
+			else {
+				file.mkdir
+				ArticleReader.logger.debug("Udalo sie stworzyc folder {}", outputFolder)
+			}
 
-      val handler = new ArticleWikiHandler(outputFolder)
-      parser.parse(xmlFile, handler)
-    }
-    catch {
-      case e: Exception => e.printStackTrace
-    }
-  }
+			val handler = new ArticleWikiHandler(outputFolder)
+			ArticleReader.logger.debug("Rozpoczynam wczytywanie pliku {}", xmlFile)
+			parser.parse(xmlFile, handler)
+			ArticleReader.logger.debug("Zakonczylem wczytywanie pliku {}", xmlFile)
+		}
+		catch {
+			case e: Exception ⇒ e.printStackTrace
+		}
+	}
 
+}
+
+object ArticleReader {
+	private val logger = LoggerFactory.getLogger(classOf[ArticleReader])
+}
+object ArticleWikiHandler {
+	private val logger = LoggerFactory.getLogger(classOf[ArticleWikiHandler])
+}
+object DistributedArticleReader {
+	private val logger = LoggerFactory.getLogger(classOf[ArticleReader])
+}
+object DistributedArticleWikiHandler {
+	private val logger = LoggerFactory.getLogger(classOf[ArticleWikiHandler])
 }
 
 class ArticleWikiHandler(private val outputFolder: String) extends DefaultHandler {
 
-  private var articleName = ""
-  private var text = ""
-  private var onTextElement = false
-  private var onTitleElement = false
-  private val builder = new StringBuilder
+	private var articleName = ""
+	private var text = ""
+	private var onTextElement = false
+	private var onTitleElement = false
+	private val builder = new StringBuilder
+	private var counter = 0
 
-  @throws[SAXException]
-  override def startElement(uri: String, localName: String, qName: String, attributes: Attributes)  {
-    if(qName.equalsIgnoreCase("text")) {
-      onTextElement = true
-    }
-    if(qName.equalsIgnoreCase("title")) {
-      onTitleElement = true
-    }
-  }
+	@throws[SAXException]
+	override def startElement(uri: String, localName: String, qName: String, attributes: Attributes) {
+		if (counter % 250 == 0) {
+			ArticleWikiHandler.logger.debug("Liczba przetworzonych artykulow {}", counter.toString)
+		}
+		if (qName.equalsIgnoreCase("text")) {
+			onTextElement = true
+		}
+		if (qName.equalsIgnoreCase("title")) {
+			onTitleElement = true
+		}
+	}
 
-  @throws[SAXException]
-  override def endElement(uri: String, localName: String, qName: String)  {
-    if(qName.equalsIgnoreCase("text")) {
-      onTextElement = false
-      text = builder.toString
-      builder.setLength(0)
-      var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "");
-      new PrintWriter(outputFolder + "/" + newfile) { write(text); close }
-      //cutCategories
-      // TODO: wysylanie
-    }
-    if(qName.equalsIgnoreCase("title")) {
-      onTitleElement = false
-      articleName = builder.toString
-      builder.setLength(0)
-    }
-  }
+	@throws[SAXException]
+	override def endElement(uri: String, localName: String, qName: String) {
+		counter = counter + 1
+		if (qName.equalsIgnoreCase("text")) {
+			onTextElement = false
+			text = builder.toString
+			builder.setLength(0)
+			var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "");
+			new PrintWriter(outputFolder + "/" + newfile) { write(text); close }
+		}
+		if (qName.equalsIgnoreCase("title")) {
+			onTitleElement = false
+			articleName = builder.toString
+			builder.setLength(0)
+		}
+	}
 
-  @throws[SAXException]
-  override def characters(ch: Array[Char], start: Int, length: Int) {
-    if(!onTextElement && !onTitleElement) {
-      return;
-    }
+	@throws[SAXException]
+	override def characters(ch: Array[Char], start: Int, length: Int) {
+		if (!onTextElement && !onTitleElement) {
+			return ;
+		}
 
-    val string = new String(ch, start, length)
-    builder.append(string)
-  }
-
-
-
-}
-
-class DistributedArticleReader(private val xmlFile: String, private val outputFolder: String, private val configuration: Configuration) {
-
-  def readAndUpload() {
-    try {
-      val factory = SAXParserFactory.newInstance
-      val parser = factory.newSAXParser
-
-      val hdfs = FileSystem.get(configuration)
-      val homeDir = hdfs.getHomeDirectory
-
-      // TODO: local
-      var file = new Path(outputFolder)
-      if(hdfs.exists(file)) {
-        if(hdfs.isDirectory(file)) {
-          hdfs.delete(file, true)
-        }
-        else {
-          throw new Exception("File exists and is not a directory.")
-        }
-      }
-      else {
-        file.mkdirs(file)
-      }
-
-      val handler = new ArticleWikiHandler(outputFolder)
-      parser.parse(xmlFile, handler)
-    }
-    catch {
-      case e: Exception => e.printStackTrace
-    }
-  }
-
+		val string = new String(ch, start, length)
+		builder.append(string)
+	}
 
 }
 
-class DistributedArticleWikiHandler(private val outputFolder: String, private val clusterConfiguration: Configuration, private val hdfs FileSystem) extends DefaultHandler {
+class DistributedArticleReader(private val xmlFile: String, private val outputFolder: String, private val hdfs: FileSystem) {
 
-  private var articleName = ""
-  private var text = ""
-  private var onTextElement = false
-  private var onTitleElement = false
-  private val builder = new StringBuilder
+	def readAndUpload() {
+		try {
+			val factory = SAXParserFactory.newInstance
+			val parser = factory.newSAXParser
 
-  @throws[SAXException]
-  override def startElement(uri: String, localName: String, qName: String, attributes: Attributes)  {
-    if(qName.equalsIgnoreCase("text")) {
-      onTextElement = true
-    }
-    if(qName.equalsIgnoreCase("title")) {
-      onTitleElement = true
-    }
-  }
+			DistributedArticleReader.logger.debug("Tworzenie lokalnego folderu {}", outputFolder)
+			var file = new Path(outputFolder)
+			if (hdfs.exists(file)) {
+				if (hdfs.isDirectory(file)) {
+					DistributedArticleReader.logger.debug("Folder {} istnieje, usuwam z zawartoscia", outputFolder)
+					hdfs.delete(file, true)
+				}
+				else {
+					throw new Exception("File exists and is not a directory.")
+				}
+			}
+			else {
+				hdfs.mkdirs(file)
+				DistributedArticleReader.logger.debug("Udalo sie stworzyc folder {}", outputFolder)
+			}
 
-  @throws[SAXException]
-  override def endElement(uri: String, localName: String, qName: String)  {
-    if(qName.equalsIgnoreCase("text")) {
-      onTextElement = false
-      text = builder.toString
-      builder.setLength(0)
-      var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "")
-      val outStream = hdfs.create(outputFolder + "/" + newfile)
-      out.write(text)
-      out.close
+			val handler = new DistributedArticleWikiHandler(outputFolder, hdfs)
+			DistributedArticleReader.logger.debug("Rozpoczynam wczytywanie pliku {}", xmlFile)
+			parser.parse(xmlFile, handler)
+			DistributedArticleReader.logger.debug("Zakonczylem wczytywanie pliku {}", xmlFile)
+		}
+		catch {
+			case e: Exception ⇒ e.printStackTrace
+		}
+	}
+}
 
-      //cutCategories
-      // TODO: wysylanie
-    }
-    if(qName.equalsIgnoreCase("title")) {
-      onTitleElement = false
-      articleName = builder.toString
-      builder.setLength(0)
-    }
-  }
+class DistributedArticleWikiHandler(private val outputFolder: String, private val hdfs: FileSystem) extends DefaultHandler {
 
-  @throws[SAXException]
-  override def characters(ch: Array[Char], start: Int, length: Int) {
-    if(!onTextElement && !onTitleElement) {
-      return;
-    }
+	private var articleName = ""
+	private var text = ""
+	private var onTextElement = false
+	private var onTitleElement = false
+	private val builder = new StringBuilder
+	private var counter = 0
 
-    val string = new String(ch, start, length)
-    builder.append(string)
-  }
+	@throws[SAXException]
+	override def startElement(uri: String, localName: String, qName: String, attributes: Attributes) {
+		if (counter % 250 == 0) {
+			DistributedArticleWikiHandler.logger.debug("Liczba przetworzonych artykulow {}", counter.toString)
+		}
+		if (qName.equalsIgnoreCase("text")) {
+			onTextElement = true
+		}
+		if (qName.equalsIgnoreCase("title")) {
+			onTitleElement = true
+		}
+	}
 
+	@throws[SAXException]
+	override def endElement(uri: String, localName: String, qName: String) {
+		counter = counter + 1
+		if (qName.equalsIgnoreCase("text")) {
+			onTextElement = false
+			text = builder.toString
+			builder.setLength(0)
+			var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "")
+			val outStream = hdfs.create(new Path(outputFolder + "/" + newfile))
+			outStream.writeChars(text)
+			outStream.close
+		}
+		if (qName.equalsIgnoreCase("title")) {
+			onTitleElement = false
+			articleName = builder.toString
+			builder.setLength(0)
+		}
+	}
+
+	@throws[SAXException]
+	override def characters(ch: Array[Char], start: Int, length: Int) {
+		if (!onTextElement && !onTitleElement) {
+			return ;
+		}
+
+		val string = new String(ch, start, length)
+		builder.append(string)
+	}
 }

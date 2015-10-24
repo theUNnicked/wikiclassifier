@@ -30,55 +30,60 @@ class WordCountTask extends ClusterTask {
 	}
 }
 
-class TokenizerMapper extends Mapper[Object, Text, Text, IntWritable] {
+class TokenizerMapper extends Mapper[Object, Text, Text, Text] {
 
 	private val out = new Text
 	private val word = new Text
 
 	override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, Text]#Context): Unit = {
 		val regex = """([a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ]*)|(([0-9]{4})-([0-9]{2})-([0-9]{2})|([0-9]{4}))""".r
-		val path = ((FileSplit) context.getInputSplit()).getPath
-		cutCategories().foreach { category =>
+		val path = context.getInputSplit.asInstanceOf[FileSplit].getPath
+		var valueString = value.toString
+		var fileName = FilenameUtils.getBaseName(path.toString)
+		val cutted = cutCategories(valueString)
+		cutted._1.foreach { category ⇒
+			val text = new Text
 			text.set(fileName + "\\\\:Cat")
 			out.set(category)
 			context.write(text, out)
 		}
-		var fileName = FilenameUtils.getBaseName(path.toString)
-		regex.findAllIn(value).foreach {word =>
+		valueString = cutted._2
+		regex.findAllIn(valueString).foreach { word ⇒
+			val text = new Text
 			text.set(fileName + "\\" + word)
 			out.set("1")
-			context.write(word, out)
+			context.write(text, out)
 		}
 	}
 
-	private def cutCategories(text: String) = {
-    val reg = """(\[\[Kategoria:.+\]\])""".r
-    val all = reg.findAllIn(text)
-		val categories = List[String]()
-    all.foreach { x => getCategoryAndInsert(x) }
-    text = reg.replaceAllIn(text, "")
-		return categories
-  }
+	private def cutCategories(text: String): Tuple2[List[String], String] = {
+		val reg = """(\[\[Kategoria:.+\]\])""".r
+		val all = reg.findAllIn(text)
+		var categories = List[String]()
+		all.foreach { x ⇒ categories = getCategoryAndInsert(x, categories) }
+		val newText = reg.replaceAllIn(text, "")
+		return (categories, newText)
+	}
 
-  private def getCategoryAndInsert(categoryString: String, categories: List[String]()) {
-    val category = categoryString.replace("[[Kategoria:", "").replace("]]", "").trim
-    categories = categories :+ category
-  }
+	private def getCategoryAndInsert(categoryString: String, categories: List[String]): List[String] = {
+		val category = categoryString.replace("[[Kategoria:", "").replace("]]", "").trim
+		return categories :+ category
+	}
 }
 
-class IntSumReducer extends Reducer[Text, Text, Text, IntWritable] {
+class IntSumReducer extends Reducer[Text, Text, Text, Text] {
 
-	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, Text, Text, IntWritable]#Context): Unit = {
+	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, Text, Text, Text]#Context): Unit = {
 		var keyString = key.toString
-		if(key.contains("\\\\:Cat")) {
-			values.foreach { value =>
+		if (keyString.contains("\\\\:Cat")) {
+			values.foreach { value ⇒
 				val title = keyString.replace("\\\\:Cat", "")
-				val fullValue = "::Cat\t"+value
+				val fullValue = "::Cat\t" + value
 				context.write(new Text(title), new Text(fullValue))
 			}
 		}
 		else {
-			val sum = values.foldLeft(0) { (sum, v) => sum + v.toString.toInt }
+			val sum = values.foldLeft(0) { (sum, v) ⇒ sum + v.toString.toInt }
 			val split = keyString.toString.split("\\")
 			context.write(new Text(split(0)), new Text(split(1) + sum.toString))
 		}
