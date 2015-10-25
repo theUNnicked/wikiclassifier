@@ -18,7 +18,7 @@
 
 <configuration>
    <property> 
-      <name>fs.default.name</name> 
+      <name>fs.defaultFs</name> 
       <value>hdfs://des01.eti.pg.gda.pl:54310/</value> 
    </property> 
    <property> 

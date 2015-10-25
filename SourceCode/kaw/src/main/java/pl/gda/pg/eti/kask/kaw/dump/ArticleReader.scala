@@ -12,6 +12,8 @@ import java.io.PrintWriter
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.fs.Path
 import org.slf4j.LoggerFactory
+import java.io.BufferedWriter
+import java.io.OutputStreamWriter
 
 class ArticleReader(private val xmlFile: String, private val outputFolder: String) {
 
@@ -90,7 +92,7 @@ class ArticleWikiHandler(private val outputFolder: String) extends DefaultHandle
 			onTextElement = false
 			text = builder.toString
 			builder.setLength(0)
-			var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "");
+			var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "").replace(":", "_")
 			new PrintWriter(outputFolder + "/" + newfile) { write(text); close }
 		}
 		if (qName.equalsIgnoreCase("title")) {
@@ -157,11 +159,11 @@ class DistributedArticleWikiHandler(private val outputFolder: String, private va
 
 	@throws[SAXException]
 	override def startElement(uri: String, localName: String, qName: String, attributes: Attributes) {
-		if (counter % 250 == 0) {
-			DistributedArticleWikiHandler.logger.debug("Liczba przetworzonych artykulow {}", counter.toString)
-		}
 		if (qName.equalsIgnoreCase("text")) {
 			onTextElement = true
+			if (counter % 250 == 0) {
+				DistributedArticleWikiHandler.logger.debug("Liczba przetworzonych artykulow {}", counter.toString)
+			}
 		}
 		if (qName.equalsIgnoreCase("title")) {
 			onTitleElement = true
@@ -170,14 +172,16 @@ class DistributedArticleWikiHandler(private val outputFolder: String, private va
 
 	@throws[SAXException]
 	override def endElement(uri: String, localName: String, qName: String) {
-		counter = counter + 1
 		if (qName.equalsIgnoreCase("text")) {
+			counter = counter + 1
 			onTextElement = false
 			text = builder.toString
 			builder.setLength(0)
-			var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "")
+			var newfile = articleName.replace("/", "_").replace("\\", "_").replace(" ", "_").replace("\"", "").replace(":", "_")
 			val outStream = hdfs.create(new Path(outputFolder + "/" + newfile))
-			outStream.writeChars(text)
+			val bw = new BufferedWriter(new OutputStreamWriter(outStream))
+			bw.write(text)
+			bw.close
 			outStream.close
 		}
 		if (qName.equalsIgnoreCase("title")) {
