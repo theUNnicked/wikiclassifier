@@ -62,10 +62,6 @@ class TokenizerMapper extends Mapper[Object, Text, Text, Text] {
 	private def cutCategories(text: String): Tuple2[List[String], String] = {
 		val reg = """(\[\[Kategoria:.+\]\])""".r
 		val all = reg.findAllIn(text)
-		if(text.contains("Kategoria:")) {
-			val a = 1
-			a.toString
-		}
 		var categories = List[String]()
 		all.foreach { x ⇒ categories = getCategoryAndInsert(x, categories) }
 		val newText = reg.replaceAllIn(text, "")

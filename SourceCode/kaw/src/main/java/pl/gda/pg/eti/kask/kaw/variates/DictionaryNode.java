@@ -1,4 +1,4 @@
-package pl.gda.pg.eti.kask.kaw.variates
+package pl.gda.pg.eti.kask.kaw.variates;
 
 import java.io.Serializable;
 import java.util.ArrayList;
