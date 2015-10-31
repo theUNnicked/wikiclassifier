@@ -4,3 +4,4 @@ target/
 .cache-tests
 objective/
 objectiveresult/
+serializedDictionary.txt
