@@ -1,4 +1,6 @@
 target/
 .cache
+.cache-main
+.cache-tests
 objective/
 objectiveresult/
