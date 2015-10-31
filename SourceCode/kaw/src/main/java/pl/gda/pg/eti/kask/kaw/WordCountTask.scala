@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
 import org.apache.hadoop.fs.FileSystem
-import pl.gda.pg.eti.kask.kaw.variates.DictionaryTree
+import pl.gda.pg.eti.kio.kaw.variates.DictionaryTree
 
 class WordCountTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
@@ -108,7 +108,7 @@ class IntSumReducer extends Reducer[Text, Text, Text, Text] {
 		if (keyString.contains("\\\\:Cat")) {
 			val title = keyString.replace("\\\\:Cat", "")
 			val allCategories = values.foldLeft[String]("") { (all, current) ⇒ all + "\t" + current.toString }
-			val fullValue = "::Cat\t" + allCategories
+			val fullValue = "::Cat" + allCategories
 			context.write(new Text(title), new Text(fullValue))
 		}
 		else {

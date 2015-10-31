@@ -1,5 +1,5 @@
 package pl.gda.pg.eti.kask.kaw.knn
-import pl.gda.pg.eti.kask.kaw.extract.Word
+import pl.gda.pg.eti.kask.kaw.Word
 import scala.collection.mutable.ArrayBuffer
 
 class CosineDistance {
@@ -22,25 +22,25 @@ class CosineDistance {
   }
   
   private def setVectors(iterable1: Iterable[Word], iterable2: Iterable[Word]) : Unit ={
-    var all_words = new ArrayBuffer[Int]()
+    var all_words = new ArrayBuffer[String]()
     
     var iterator1 = iterable1.iterator
     while(iterator1.hasNext) {
-      var wordId = iterator1.next.getId
+      var wordId = iterator1.next.getWord
       if(!all_words.contains(wordId)) all_words += wordId
     }
     
     var iterator2 = iterable2.iterator
     while(iterator2.hasNext) {
-      var wordId = iterator2.next.getId
+      var wordId = iterator2.next.getWord
       if(!all_words.contains(wordId)) all_words += wordId
     }
     
     for (x <- 0 to all_words.length-1) {
-      var iterable1Elem = iterable1.find(_.getId == all_words(x))
+      var iterable1Elem = iterable1.find(_.getWord == all_words(x))
       if(iterable1Elem.isDefined) vector1 += iterable1Elem.get.getCount else vector1 += 0    
       
-      var iterable2Elem = iterable2.find(_.getId == all_words(x))
+      var iterable2Elem = iterable2.find(_.getWord == all_words(x))
       if(iterable2Elem.isDefined) vector2 += iterable2Elem.get.getCount else vector2 += 0
     }
   }

@@ -11,8 +11,8 @@ class KnnClassifier {
     
     while(iterator.hasNext) {
       var learningCase = iterator.next
-      var dist: Double = cosineDistance.getDistance(entity1, learningCase._2)
-      distances += Tuple2(learningCase._1, dist)
+//      var dist: Double = cosineDistance.getDistance(entity1, learningCase._2)
+//      distances += Tuple2(learningCase._1, dist)
     }
     
     var sortedDistances = distances.sortBy(_._2)

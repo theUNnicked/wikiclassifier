@@ -13,7 +13,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import pl.gda.pg.eti.kask.kaw.extract.MatrixuOutputParser
 import pl.gda.pg.eti.kask.kaw.knn.CosineSimilarityIndexCounter
-import pl.gda.pg.eti.kask.kaw.extract.Word
 
 
 class CosineSimilarityCounterTask extends ClusterTask {
@@ -40,7 +39,7 @@ class CosineMapper extends Mapper[Object, Text, IntWritable, Word] {
 	private val idOut = new IntWritable
 
 	override def map(key: Object, value: Text, context: Mapper[Object, Text, IntWritable, Word]#Context): Unit = {
-		parser.parse(value.toString, context)
+//		parser.parse(value.toString, context)
 	}
 }
 

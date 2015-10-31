@@ -1,4 +1,4 @@
-package pl.gda.pg.eti.kask.kaw.variates;
+package pl.gda.pg.eti.kio.kaw.variates;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

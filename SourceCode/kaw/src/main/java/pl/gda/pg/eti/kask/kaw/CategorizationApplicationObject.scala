@@ -16,17 +16,22 @@ class CategorizationApplicationObject {
 
 object CategorizationApplicationObject {
 
-	private val USER_NAME = "143351sw"
 	private val logger = LoggerFactory.getLogger(classOf[CategorizationApplicationObject])
 	private val properties = new Properties
 	private var dictionaryLocation = ""
-
+	private var newArticleFile = ""
+	private var username = ""
+	
+	def getNewArticleFileName = { newArticleFile }
+	def getUsername = { username }
 	def getDictionaryLocation = { dictionaryLocation }
 
 	def main(args: Array[String]): Unit = {
 
 		properties.load(classOf[CategorizationApplicationObject].getResourceAsStream("/application.properties"));
 		dictionaryLocation = properties.getProperty("dictionaryLocation")
+		newArticleFile = properties.getProperty("newArticleOutputFile")
+		username = properties.getProperty("userName")
 
 		logger.debug("Program start")
 		if (args(0).equals("--dump")) {
@@ -37,7 +42,7 @@ object CategorizationApplicationObject {
 			}
 		}
 
-		val ugi = UserGroupInformation.createRemoteUser(USER_NAME)
+		val ugi = UserGroupInformation.createRemoteUser(getUsername)
 		try {
 			ugi.doAs(new PrivilegedExceptionAction[Void]() {
 
@@ -45,7 +50,7 @@ object CategorizationApplicationObject {
 					logger.debug("Tworze konfiguracje dla klastra")
 					val conf = new Configuration
 
-					conf.set("hadoop.job.ugi", USER_NAME)
+					conf.set("hadoop.job.ugi", getUsername)
 					// conf.set("mapred.job.tracker", "des01.eti.pg.gda.pl:54311")
 					// conf.set("fs.defaultFS", "hdfs://des01.eti.pg.gda.pl:54310")
 					// conf.set("mapreduce.framework.name", "yarn");
@@ -72,8 +77,8 @@ object CategorizationApplicationObject {
 						val task = new WordCountTask
 						System.exit(task.runTask(conf, b.toArray))
 					}
-					else {
-						val task = new WordCountTask
+					else if (args(0).equals("--classify")){
+						val task = new NoMatrixuSimilarityTask
 						System.exit(task.runTask(conf, b.toArray))
 					}
 

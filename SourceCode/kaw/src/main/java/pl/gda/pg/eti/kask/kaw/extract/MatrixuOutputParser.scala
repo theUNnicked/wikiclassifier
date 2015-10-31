@@ -48,6 +48,7 @@ class MatrixuOutputParser {
 	}
 }
 
+@Deprecated
 class Word(private var id: Int, private var count: Int) extends Writable {
 	def getId = { id }
 	def getCount = { count }
@@ -63,7 +64,7 @@ class Word(private var id: Int, private var count: Int) extends Writable {
 		countWritable.set(count)
 		countWritable.write(out)
 	}
-	
+
 	@throws[IOException]
 	override def readFields(in: DataInput) {
 		val idWritable = new IntWritable();
