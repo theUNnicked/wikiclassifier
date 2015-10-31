@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -18,10 +19,6 @@ public class DictionaryTree implements Serializable {
 
 	private static final long serialVersionUID = -1778581097720228638L;
 	private DictionaryNode dictionary = null;
-
-	DictionaryTree() {
-
-	}
 
 	public boolean serializeToFile(String filePath) {
 		try {
@@ -36,10 +33,19 @@ public class DictionaryTree implements Serializable {
 			return false;
 		}
 	}
-
+	
 	public boolean deserializeFromFile(String filePath) {
 		try {
 			FileInputStream fileIn = new FileInputStream(filePath);
+			return deserializeFromFile(fileIn);
+		} catch (IOException i) {
+			i.printStackTrace();
+			return false;
+		}
+	}
+
+	public boolean deserializeFromFile(InputStream fileIn) {
+		try {
 			ObjectInputStream in = new ObjectInputStream(fileIn);
 			dictionary = (DictionaryNode) in.readObject();
 			in.close();

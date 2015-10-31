@@ -9,6 +9,7 @@ import org.apache.hadoop.fs.FileSystem
 import org.slf4j.LoggerFactory
 import org.apache.hadoop.fs.Path
 import java.io.File
+import java.util.Properties
 
 class CategorizationApplicationObject {
 }
@@ -17,8 +18,16 @@ object CategorizationApplicationObject {
 
 	private val USER_NAME = "143351sw"
 	private val logger = LoggerFactory.getLogger(classOf[CategorizationApplicationObject])
+	private val properties = new Properties
+	private var dictionaryLocation = ""
+
+	def getDictionaryLocation = { dictionaryLocation }
 
 	def main(args: Array[String]): Unit = {
+
+		properties.load(classOf[CategorizationApplicationObject].getResourceAsStream("/application.properties"));
+		dictionaryLocation = properties.getProperty("dictionaryLocation")
+
 		logger.debug("Program start")
 		if (args(0).equals("--dump")) {
 			if (args(1).equals("--local")) {

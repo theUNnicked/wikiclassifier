@@ -1,7 +1,6 @@
 package pl.gda.pg.eti.kask.kaw
 
 import scala.collection.JavaConversions._
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.IntWritable
@@ -14,6 +13,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
+import org.apache.hadoop.fs.FileSystem
+import pl.gda.pg.eti.kask.kaw.variates.DictionaryTree
 
 class WordCountTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
@@ -33,6 +34,16 @@ class WordCountTask extends ClusterTask {
 
 object TokenizerMapper {
 	private val logger = LoggerFactory.getLogger(classOf[TokenizerMapper])
+	private var dictionary: DictionaryTree = null
+
+	def findLexem(word: String, configuration: Configuration) = {
+		if (dictionary == null) {
+			val hdfs = FileSystem.get(configuration)
+			dictionary = new DictionaryTree()
+			dictionary.deserializeFromFile(hdfs.open(new Path(CategorizationApplicationObject.getDictionaryLocation)))
+		}
+		dictionary.getWordLexem(word)
+	}
 }
 
 class TokenizerMapper extends Mapper[Object, Text, Text, Text] {
@@ -41,9 +52,9 @@ class TokenizerMapper extends Mapper[Object, Text, Text, Text] {
 	private val out = new Text
 
 	override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, Text]#Context): Unit = {
-		
+
 		val valueString = value.toString
-		val wordsReg = """([a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ]{2,})|(([0-9]{4})-([0-9]{2})-([0-9]{2}))|([0-9]{4})""".r
+		val wordsReg = """([a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿŒœŠšŸ]{2,})|(([0-9]{4})-([0-9]{2})-([0-9]{2}))|([0-9]{4})""".r
 		val path = context.getInputSplit.asInstanceOf[FileSplit].getPath
 		val fileName = FilenameUtils.getBaseName(path.toString)
 		val cutted = cutCategories(valueString)
@@ -53,7 +64,7 @@ class TokenizerMapper extends Mapper[Object, Text, Text, Text] {
 			context.write(text, out)
 		}
 		wordsReg.findAllIn(cutted._2).foreach { word ⇒
-			text.set(fileName + "\\" + word.toLowerCase)
+			text.set(fileName + "\\" + TokenizerMapper.findLexem(word, context.getConfiguration))
 			out.set("1")
 			context.write(text, out)
 		}
@@ -72,7 +83,7 @@ class TokenizerMapper extends Mapper[Object, Text, Text, Text] {
 		val regToDelete = """(\{\{.*\}\})""".r
 		val category = regToDelete.replaceAllIn(categoryString, "").replace("[[Kategoria:", "").replace("]]", "").replace("\t", " ").trim
 		val index = category.indexOf("|")
-		val categoryTrimmed = if (index<0 ) category else category.substring(0, index)
+		val categoryTrimmed = if (index < 0) category else category.substring(0, index)
 		return categories :+ categoryTrimmed
 	}
 }
@@ -81,11 +92,11 @@ class IntSumCombiner extends Reducer[Text, Text, Text, Text] {
 	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, Text, Text, Text]#Context): Unit = {
 		val keyString = key.toString
 		if (!keyString.contains(":Cat")) {
-			val sum = values.foldLeft(0) { (sum, v) ⇒ sum + v.toString.toInt}
+			val sum = values.foldLeft(0) { (sum, v) ⇒ sum + v.toString.toInt }
 			context.write(new Text(key), new Text(sum.toString))
 		}
 		else {
-			values.foreach { x => context.write(key, x) }
+			values.foreach { x ⇒ context.write(key, x) }
 		}
 	}
 }
@@ -96,14 +107,14 @@ class IntSumReducer extends Reducer[Text, Text, Text, Text] {
 		var keyString = key.toString
 		if (keyString.contains("\\\\:Cat")) {
 			val title = keyString.replace("\\\\:Cat", "")
-			val allCategories = values.foldLeft[String]("") { (all, current) => all + "\t" + current.toString }
+			val allCategories = values.foldLeft[String]("") { (all, current) ⇒ all + "\t" + current.toString }
 			val fullValue = "::Cat\t" + allCategories
 			context.write(new Text(title), new Text(fullValue))
 		}
 		else {
 			val sum = values.foldLeft(0) { (sum, v) ⇒ sum + v.toString.toInt }
 			val split = keyString.split("\\\\")
-			if(split.length == 2) {
+			if (split.length == 2) {
 				context.write(new Text(split(0)), new Text(split(1) + "\t" + sum.toString))
 			}
 		}

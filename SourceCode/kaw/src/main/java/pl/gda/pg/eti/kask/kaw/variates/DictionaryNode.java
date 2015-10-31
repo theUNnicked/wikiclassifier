@@ -13,7 +13,7 @@ public class DictionaryNode implements Serializable{
 	private int depth;
 	private int maxDepth;
 	
-	DictionaryNode(int maxDepth) {
+	public DictionaryNode(int maxDepth) {
 		this.depth = 0;
 		this.maxDepth = maxDepth;
 		this.key = null;
@@ -21,7 +21,7 @@ public class DictionaryNode implements Serializable{
 		this.leaves = new ArrayList<DictionaryNode>();
 	}
 	
-	DictionaryNode(int maxDepth, int depth) {
+	public DictionaryNode(int maxDepth, int depth) {
 		this.depth = depth;
 		this.maxDepth = maxDepth;
 		this.key = null;
