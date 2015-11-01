@@ -24,6 +24,7 @@ class NoMatrixuSimilarityTask extends ClusterTask {
 		//job.setJarByClass(classOf[WordCountTask])
 		job.setMapperClass(classOf[WordCountReader])
 		job.setReducerClass(classOf[KnnReducer])
+		job.setMapOutputValueClass(classOf[PairWritable])
 		job.setOutputKeyClass(classOf[Text])
 		job.setOutputValueClass(classOf[Text])
 		FileInputFormat.addInputPath(job, new Path(args(0)))
@@ -42,6 +43,13 @@ class PairWritable(var left: String, var right: String) extends Writable {
 	
 	def getLeft = { left }
 	def getRight = { right }
+	
+	def setLeft(left: String) { this.left = left }
+	def setRight(right: String) { this.right = right }
+	
+	def this() {
+		this("", "")
+	}
 	
 	override def readFields(in: DataInput): Unit = {
 		val txt =new Text()

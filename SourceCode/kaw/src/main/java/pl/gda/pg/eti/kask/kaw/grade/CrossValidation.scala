@@ -1,8 +1,9 @@
-package pl.gda.pg.eti.kask.kaw.knn
+package pl.gda.pg.eti.kask.kaw.grade
 
 import scala.collection.mutable.ArrayBuffer
 import pl.gda.pg.eti.kask.kaw.extract.Word
 import pl.gda.pg.eti.kask.kaw.extract.CategoryFinder
+import pl.gda.pg.eti.kask.kaw.knn.KnnClassifier
 
 
 class CrossValidation {

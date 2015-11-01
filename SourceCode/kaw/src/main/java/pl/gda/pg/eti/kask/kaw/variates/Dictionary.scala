@@ -15,11 +15,13 @@ import java.io.FileReader
 import java.util.HashSet
 import org.slf4j.LoggerFactory
 
+@deprecated(message = "Dobra wersja w packagu pl.gda.pg.eti.kio.kaw.variates")
 object DictionaryTree {
 	private val serialVersionUID = -1778581097720228638L;
 	private val logger = LoggerFactory.getLogger(classOf[DictionaryTree])
 }
 
+@deprecated(message = "Dobra wersja w packagu pl.gda.pg.eti.kio.kaw.variates")
 class DictionaryTree extends Serializable {
 	private var dictionary: DictionaryNode = null;
 	
@@ -121,11 +123,13 @@ class DictionaryTree extends Serializable {
 	}
 }
 
+@deprecated(message = "Dobra wersja w packagu pl.gda.pg.eti.kio.kaw.variates")
 object DictionaryNode {
 	private val serialVersionUID = -1335933171986936438L;
 	private val logger = LoggerFactory.getLogger(classOf[DictionaryNode])
 }
 
+@deprecated(message = "Dobra wersja w packagu pl.gda.pg.eti.kio.kaw.variates")
 class DictionaryNode(private val maxDepth: Int, private val depth: Int) extends Serializable{
 	private var key: String = null
 	private var value: String = null
