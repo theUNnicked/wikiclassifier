@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import org.apache.hadoop.fs.Path
 import java.io.File
 import java.util.Properties
+import pl.gda.pg.eti.kask.kaw.knn.CosineSimilarityIndexCounter
 
 class CategorizationApplicationObject {
 }
@@ -21,7 +22,7 @@ object CategorizationApplicationObject {
 	private var dictionaryLocation = ""
 	private var newArticleFile = ""
 	private var username = ""
-	
+
 	def getNewArticleFileName = { newArticleFile }
 	def getUsername = { username }
 	def getDictionaryLocation = { dictionaryLocation }
@@ -60,6 +61,15 @@ object CategorizationApplicationObject {
 					conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName())
 					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
 
+					if (args(0).equals("--best")) {
+						val strategyBest70Percent: (Double, Tuple2[String, Double]) => Boolean = { (max, p) => if (p._2 > max * 0.7) true else false }
+						if (args(1).equals("--70p")) {
+							new CosineSimilarityIndexCounter().getBestCategories(conf, args(2), args(3).toInt, true)(strategyBest70Percent) 
+						} else {
+							new CosineSimilarityIndexCounter().getBestCategories(conf, args(1), args(2).toInt, true)(strategyBest70Percent)
+						}
+					}
+
 					if (args(0).equals("--dump")) {
 						logger.debug("Pobieram system plikow z konfiguracji")
 						val hdfs = FileSystem.get(conf)
@@ -76,8 +86,7 @@ object CategorizationApplicationObject {
 					if (args(0).equals("--wordcount")) {
 						val task = new WordCountTask
 						System.exit(task.runTask(conf, b.toArray))
-					}
-					else if (args(0).equals("--classify")){
+					} else if (args(0).equals("--classify")) {
 						val task = new NoMatrixuSimilarityTask
 						System.exit(task.runTask(conf, b.toArray))
 					}
@@ -85,8 +94,7 @@ object CategorizationApplicationObject {
 					return null
 				}
 			})
-		}
-		catch {
+		} catch {
 			case e: Exception ⇒ e.printStackTrace
 		}
 	}

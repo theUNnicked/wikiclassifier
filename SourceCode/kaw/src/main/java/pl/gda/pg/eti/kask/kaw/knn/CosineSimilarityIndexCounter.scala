@@ -11,35 +11,79 @@ import org.apache.hadoop.fs.Path
 import java.io.InputStreamReader
 import java.io.BufferedReader
 
-class CosineSimilarityIndexCounter(private val threshold: Double) {
+class CosineSimilarityIndexCounter() {
 
-	@deprecated(message = "Uzywaj konstruktora z parametrem")
-	def this() = this(0)
-
-	def findBestCategories(articles: Map[Double, List[String]]): List[String] = {
-
-		null
+	def findBestCategories(articles: Map[Double, Array[String]], precise: Boolean)(thresholdingStrategy: (Double, Tuple2[String, Double]) => Boolean): List[String] = {
+		var map = scala.collection.mutable.Map[String, Double]()
+		articles.foreach{ tp =>
+			tp._2.foreach { cat => 
+				if(map.contains(cat)) {
+					if(precise) {
+						map(cat) += tp._1
+					}
+					else {
+						map(cat) += 1
+					}
+				}
+				else {
+					if(precise) {
+						map += cat -> tp._1
+					}
+					else {
+						map += cat -> 1
+					}
+				}
+			}
+		}
+		
+		val best = map.toSeq.sortBy(-_._2)
+		val max = best(0)._2
+		best.takeWhile { s => thresholdingStrategy(max, s) }.foldLeft[List[String]](List[String]()) { (list, e) => list :+ e._1 }
+	}
+	
+	def getBestCategories(conf: Configuration, outputDir: String, k: Int, precise: Boolean)(thresholdingStrategy: (Double, Tuple2[String, Double]) => Boolean): List[String] = {
+		findBestCategories(extractKBestArticles(conf, outputDir, k), precise)(thresholdingStrategy)
+	}
+	
+	def extractKBestArticles(conf: Configuration, outputDir: String, k: Int): Map[Double, Array[String]] = {
+		var map = Map[Double, Array[String]]()
+		val array = extractKBestArticlesAsArray(conf, outputDir, k)
+		array.foreach { x =>  
+			val split = x.split("\n")
+			map += split(1).toDouble -> split.takeRight(split.length - 2)
+		}
+		map
 	}
 
-	def extractKBestArticles(conf: Configuration, outputDir: String, k: Int) {
+	private def extractKBestArticlesAsArray(conf: Configuration, outputDir: String, k: Int): Array[String] = {
 		val hdfs = FileSystem.get(conf)
 		val files = hdfs.listStatus(new Path(outputDir));
 		var i = 0
-		
-		var best = Array.fill(k){""}
-		var min = 0.0
-		
+
+		var best = Array.fill(k) { "" }
+		var min = (0, 0.0)
+
 		while (i < files.length) {
 			val file = hdfs.open(files(i).getPath)
 			val bin = new BufferedReader(new InputStreamReader(file))
-			Stream.continually(bin.readLine).takeWhile(_ != null).foreach { line => 
-				val parts = line.split("\t")
-				// TODO: wybieranie k najlepszych
+			Stream.continually(bin.readLine).takeWhile(_ != null).foreach { line =>
+				if (line.split("\t")(1).toDouble > min._2) {
+					best(min._1) = line
+					min = findMinimumWithIndex(best)
+				}
 			}
-
 			bin.close
 			file.close
 			i = i + 1
+		}
+		
+		best
+	}
+
+	private def findMinimumWithIndex(best: Array[String]): Tuple2[Int, Double] = {
+		best.zipWithIndex.foldLeft[Tuple2[Int, Double]]((0, Integer.MAX_VALUE)) { (last, x) =>
+			val sim = x._1.split("\t")(1).toDouble
+			if (sim < last._2) (x._2, sim) else last
 		}
 	}
 
