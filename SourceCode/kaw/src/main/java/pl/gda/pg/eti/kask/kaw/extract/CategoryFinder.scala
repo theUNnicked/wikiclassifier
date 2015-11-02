@@ -3,7 +3,7 @@ package pl.gda.pg.eti.kask.kaw.extract
 import java.sql.Connection
 import java.sql.DriverManager
 
-@deprecated(message = "Nie uzywany na rzecz NoMatrixuSimilarityCounter")
+@deprecated(message = "Nie uzywany na rzecz NoMatrixuSimilarityTask")
 class CategoryFinder {
   
 	private val CONNECTION_STRING = "jdbc:h2:~/test"

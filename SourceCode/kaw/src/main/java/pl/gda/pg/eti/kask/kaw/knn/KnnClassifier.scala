@@ -2,7 +2,7 @@ package pl.gda.pg.eti.kask.kaw.knn
 import pl.gda.pg.eti.kask.kaw.extract.Word
 import scala.collection.mutable.ArrayBuffer
 
-@deprecated(message = "Nie uzywany na rzecz NoMatrixSimilarityCount")
+@deprecated(message = "Nie uzywany na rzecz NoMatrixuSimilarityTask")
 class KnnClassifier {
   def getKNearestNeighbours(entity1: Iterable[Word], k : Int, learningSet: Iterable[(Int, Iterable[Word])]) : ArrayBuffer[Int] ={
     var cosineDistance = new CosineDistance()

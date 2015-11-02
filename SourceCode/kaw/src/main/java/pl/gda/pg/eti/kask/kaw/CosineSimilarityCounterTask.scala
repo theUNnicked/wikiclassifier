@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import pl.gda.pg.eti.kask.kaw.extract.MatrixuOutputParser
 import pl.gda.pg.eti.kask.kaw.knn.CosineSimilarityIndexCounter
 
-
+@deprecated(message = "Nie uzywany")
 class CosineSimilarityCounterTask extends ClusterTask {
   override def runTask(conf: Configuration, args: Array[String]): Int = {
 		val job = Job.getInstance(conf, "Word count in Scala");
@@ -31,7 +31,7 @@ class CosineSimilarityCounterTask extends ClusterTask {
 	}
 }
 
-
+@deprecated(message = "Nie uzywany")
 class CosineMapper extends Mapper[Object, Text, IntWritable, Word] {
 
 	private val parser = new MatrixuOutputParser
@@ -43,6 +43,7 @@ class CosineMapper extends Mapper[Object, Text, IntWritable, Word] {
 	}
 }
 
+@deprecated(message = "Nie uzywany")
 class CosineReducer extends Reducer[IntWritable, Word, Text, IntWritable] {
 
 	private val counter = new CosineSimilarityIndexCounter
