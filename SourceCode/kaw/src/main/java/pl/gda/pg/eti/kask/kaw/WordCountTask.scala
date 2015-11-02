@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
 import org.apache.hadoop.fs.FileSystem
-import pl.gda.pg.eti.kio.kaw.variates.DictionaryTree
+import pl.gda.pg.eti.kask.kaw.variates.DictionaryTree
 
 class WordCountTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
