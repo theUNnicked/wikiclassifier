@@ -83,9 +83,14 @@ public class DictionaryTree implements Serializable {
 			return false;
 		}
 		System.out.println("Zapisano do pliku testWords.txt");
+		int count = 0;
 		for (String line : fileDictionary) {
 			String[] lineArray = line.split("\t");
 			dictionary.insertWordWithLexem(lineArray[0], lineArray[1]);
+			count++;
+			if(count % 100000 == 0) {
+				System.out.println("Przetworzono " + count + "/" + fileDictionary.size() + " słów.");		
+			}
 		}
 		System.out.println("Utworzono slownik");
 		return true;
