@@ -62,11 +62,12 @@ object CategorizationApplicationObject {
 					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
 
 					if (args(0).equals("--best")) {
+						println("Wybrane kategorie dla artykulu Dota_2:")
 						val strategyBest70Percent: (Double, Tuple2[String, Double]) => Boolean = { (max, p) => if (p._2 > max * 0.7) true else false }
 						if (args(1).equals("--70p")) {
-							new CosineSimilarityIndexCounter().getBestCategories(conf, args(2), args(3).toInt, true)(strategyBest70Percent) 
+							new CosineSimilarityIndexCounter().getBestCategories(conf, args(2), args(3).toInt, true)(strategyBest70Percent).foreach { x => println(x) }
 						} else {
-							new CosineSimilarityIndexCounter().getBestCategories(conf, args(1), args(2).toInt, true)(strategyBest70Percent)
+							new CosineSimilarityIndexCounter().getBestCategories(conf, args(1), args(2).toInt, true)(strategyBest70Percent).foreach { x => println(x) }
 						}
 					}
 

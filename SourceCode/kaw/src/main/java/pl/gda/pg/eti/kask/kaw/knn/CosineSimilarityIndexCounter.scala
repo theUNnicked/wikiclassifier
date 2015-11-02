@@ -49,8 +49,10 @@ class CosineSimilarityIndexCounter() {
 		var map = Map[Double, Array[String]]()
 		val array = extractKBestArticlesAsArray(conf, outputDir, k)
 		array.foreach { x =>  
-			val split = x.split("\n")
-			map += split(1).toDouble -> split.takeRight(split.length - 2)
+			if(!x.isEmpty) {
+				val split = x.split("\t")
+				map += split(1).toDouble -> split.takeRight(split.length - 2)
+			}
 		}
 		map
 	}
@@ -67,9 +69,11 @@ class CosineSimilarityIndexCounter() {
 			val file = hdfs.open(files(i).getPath)
 			val bin = new BufferedReader(new InputStreamReader(file))
 			Stream.continually(bin.readLine).takeWhile(_ != null).foreach { line =>
-				if (line.split("\t")(1).toDouble > min._2) {
-					best(min._1) = line
-					min = findMinimumWithIndex(best)
+				if(line != null && !line.isEmpty()) {
+					if (line.split("\t")(1).toDouble > min._2) {
+						best(min._1) = line
+						min = findMinimumWithIndex(best)
+					}
 				}
 			}
 			bin.close
@@ -82,8 +86,11 @@ class CosineSimilarityIndexCounter() {
 
 	private def findMinimumWithIndex(best: Array[String]): Tuple2[Int, Double] = {
 		best.zipWithIndex.foldLeft[Tuple2[Int, Double]]((0, Integer.MAX_VALUE)) { (last, x) =>
-			val sim = x._1.split("\t")(1).toDouble
-			if (sim < last._2) (x._2, sim) else last
+			if(!x._1.isEmpty) {
+				val sim = x._1.split("\t")(1).toDouble
+				if (sim < last._2) (x._2, sim) else last
+			}
+			last
 		}
 	}
 
