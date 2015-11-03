@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import pl.gda.pg.eti.kask.kaw.extract.Word
 import pl.gda.pg.eti.kask.kaw.extract.CategoryFinder
 import pl.gda.pg.eti.kask.kaw.knn.KnnClassifier
-
+//import.pl.gda.pg.eti.kask.kaw.knn.CosineSimilarityIndexCounter
 
 class CrossValidation {
   
@@ -32,7 +32,8 @@ class CrossValidation {
   private def applyKNN(foldsCount: Int, matrix: ArrayBuffer[ArrayBuffer[(Int, Iterable[Word])]]) : Double ={
     var learningSet = new ArrayBuffer[(Int, Iterable[Word])]()
     var categoryFinder = new CategoryFinder()
-    var result = 0.0
+    var result = 0
+    var compareKCategories = 3
     
     for (x <- 0 to foldsCount) {
       learningSet = extractLearningSet(x, matrix)
@@ -40,7 +41,7 @@ class CrossValidation {
         var categories = categoryFinder.findCategories(matrix(x)(y)._1)
         var predictedCategories = applyKNNForFold(matrix(x)(y)._2, learningSet)
         
-//        compare(categories, predictedCategories)
+        if (compare(compareKCategories, categories, predictedCategories)) result += 1
        }
     }
     
@@ -63,18 +64,22 @@ class CrossValidation {
   
   // should return categories
   private def applyKNNForFold(entity1: Iterable[Word], learningSet: Iterable[(Int, Iterable[Word])]) : List[String] ={
-    var knn = new KnnClassifier()
-    var nearestNeighbours = knn.getKNearestNeighbours(entity1, 2, learningSet)
+    var knn = new CosineSimilarityIndexCount()
+    var nearestNeighbours = knn.
     
     return List("Nauka", "Technika", "Religia")
   }
   
-  private def compare(expectedCategories: List[String], predictedCategories: List[String]) : Double ={
-    var compareResult = 0.0
+  private def compare(k: Int, expectedCategories: List[String], predictedCategories: List[String]) : Boolean ={
+    var n = 0
+    expectedCategories.foreach { 
+      expected => 
+        for (x <- 0 to predictedCategories.length) {
+          if (expected.contains(predictedCategories(x))) n += 1     
+        }
+    }
     
-    // TODO: compare known categories with the ones that are results from knn
-    
-    return compareResult
+    return n >= k
   }
 }
 
