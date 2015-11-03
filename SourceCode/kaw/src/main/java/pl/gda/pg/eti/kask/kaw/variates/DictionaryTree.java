@@ -36,6 +36,7 @@ public class DictionaryTree implements Serializable {
 	
 	public boolean deserializeFromFile(String filePath) {
 		try {
+			dictionary = null;
 			FileInputStream fileIn = new FileInputStream(filePath);
 			return deserializeFromFile(fileIn);
 		} catch (IOException i) {
@@ -46,6 +47,7 @@ public class DictionaryTree implements Serializable {
 
 	public boolean deserializeFromFile(InputStream fileIn) {
 		try {
+			dictionary = null;
 			ObjectInputStream in = new ObjectInputStream(fileIn);
 			dictionary = (DictionaryNode) in.readObject();
 			in.close();
