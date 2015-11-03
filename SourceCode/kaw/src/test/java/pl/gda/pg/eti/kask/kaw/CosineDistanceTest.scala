@@ -3,6 +3,7 @@ package pl.gda.pg.eti.kask.kaw
 import org.junit.Test
 import org.junit.Assert
 import pl.gda.pg.eti.kask.kaw.knn.CosineDistance
+import pl.gda.pg.eti.kask.kaw.cluster.Word
 
 class CosineDistanceTest {
 	@Test

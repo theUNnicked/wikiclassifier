@@ -3,6 +3,8 @@ package pl.gda.pg.eti.kask.kaw
 import scala.collection.JavaConversions._
 import org.junit.Test
 import org.junit.Assert
+import pl.gda.pg.eti.kask.kaw.cluster.PairWritable
+import pl.gda.pg.eti.kask.kaw.cluster.KnnReducer
 
 class KnnReducerTest {
 	

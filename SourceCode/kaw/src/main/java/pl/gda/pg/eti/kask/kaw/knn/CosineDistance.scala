@@ -1,5 +1,5 @@
 package pl.gda.pg.eti.kask.kaw.knn
-import pl.gda.pg.eti.kask.kaw.Word
+import pl.gda.pg.eti.kask.kaw.cluster.Word
 import scala.collection.mutable.ArrayBuffer
 
 class CosineDistance {

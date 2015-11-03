@@ -1,4 +1,4 @@
-package pl.gda.pg.eti.kask.kaw
+package pl.gda.pg.eti.kask.kaw.cluster
 
 import scala.collection.JavaConversions._
 import org.apache.hadoop.conf.Configuration
@@ -16,6 +16,7 @@ import org.apache.hadoop.fs.FileSystem
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import pl.gda.pg.eti.kask.kaw.knn.CosineDistance
+import org.apache.hadoop.io.Text
 
 class NoMatrixuSimilarityTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
@@ -93,7 +94,7 @@ object KnnReducer {
 	
 	def getNewArticleLists(conf: Configuration): Tuple2[List[Word], List[String]] = {
 		if(newArticleLists == null) {
-			newArticleLists = new NewArticleUnpacker(CategorizationApplicationObject.getNewArticleFileName, conf).unpack()
+			newArticleLists = new NewArticleUnpacker(conf.get("pl.gda.pg.eti.kask.kaw.newArticleFileName"), conf).unpack()
 		}
 		newArticleLists
 	}

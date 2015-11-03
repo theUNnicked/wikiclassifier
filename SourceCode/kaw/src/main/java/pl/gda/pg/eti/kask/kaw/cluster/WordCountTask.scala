@@ -1,4 +1,4 @@
-package pl.gda.pg.eti.kask.kaw
+package pl.gda.pg.eti.kask.kaw.cluster
 
 import scala.collection.JavaConversions._
 import org.apache.hadoop.conf.Configuration
@@ -40,7 +40,7 @@ object TokenizerMapper {
 		if (dictionary == null) {
 			val hdfs = FileSystem.get(configuration)
 			dictionary = new DictionaryTree()
-			dictionary.deserializeFromFile(hdfs.open(new Path(CategorizationApplicationObject.getDictionaryLocation)))
+			dictionary.deserializeFromFile(hdfs.open(new Path(configuration.get("pl.gda.pg.eti.kask.kaw.dictionaryLocation"))))
 		}
 		dictionary.getWordLexem(word)
 	}
