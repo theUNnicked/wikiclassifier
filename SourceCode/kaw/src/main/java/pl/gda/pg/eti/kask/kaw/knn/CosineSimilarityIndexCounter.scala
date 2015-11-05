@@ -66,18 +66,20 @@ class CosineSimilarityIndexCounter() {
 		var min = (0, 0.0)
 
 		while (i < files.length) {
-			val file = hdfs.open(files(i).getPath)
-			val bin = new BufferedReader(new InputStreamReader(file))
-			Stream.continually(bin.readLine).takeWhile(_ != null).foreach { line =>
-				if(line != null && !line.isEmpty()) {
-					if (line.split("\t")(1).toDouble > min._2) {
-						best(min._1) = line
-						min = findMinimumWithIndex(best)
+			if(!files(i).getPath.toString.contains(".crc")) {
+				val file = hdfs.open(files(i).getPath)
+				val bin = new BufferedReader(new InputStreamReader(file))
+				Stream.continually(bin.readLine).takeWhile(_ != null).foreach { line =>
+					if(line != null && !line.isEmpty()) {
+						if (line.split("\t")(1).toDouble > min._2) {
+							best(min._1) = line
+							min = findMinimumWithIndex(best)
+						}
 					}
 				}
+				bin.close
+				file.close
 			}
-			bin.close
-			file.close
 			i = i + 1
 		}
 		

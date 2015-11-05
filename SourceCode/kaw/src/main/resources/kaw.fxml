@@ -6,7 +6,6 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <left>
       <Accordion BorderPane.alignment="CENTER">
@@ -39,6 +38,18 @@
          <center>
             <TextArea prefHeight="378.0" prefWidth="408.0" BorderPane.alignment="CENTER" />
          </center>
+         <top>
+            <HBox prefHeight="25.0" prefWidth="398.0" BorderPane.alignment="CENTER">
+               <children>
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Nazwa">
+                     <HBox.margin>
+                        <Insets left="2.0" right="2.0" top="4.0" />
+                     </HBox.margin>
+                  </Text>
+                  <TextField text="Niezatytuowany" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+         </top>
       </BorderPane>
    </center>
 </BorderPane>
