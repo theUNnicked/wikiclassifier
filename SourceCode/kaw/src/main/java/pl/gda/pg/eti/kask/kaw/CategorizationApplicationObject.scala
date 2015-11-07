@@ -36,8 +36,8 @@ object CategorizationApplicationObject {
 		newArticleFile = properties.getProperty("newArticleOutputFile")
 		username = properties.getProperty("userName")
 
-		val trainingSet = properties.getProperty("trainingSet").toInt
-		val testingSet = properties.getProperty("testingSet").toInt
+		val folds = properties.getProperty("folds").toInt
+		val randomPerFold = properties.getProperty("randomPerFold").toInt
 
 		logger.debug("Program start")
 		if (args(0).equals("--dump")) {
@@ -66,8 +66,8 @@ object CategorizationApplicationObject {
 					conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName())
 					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
 
-					conf.setInt("pl.gda.pg.eti.kask.kaw.testingSet", testingSet)
-					conf.setInt("pl.gda.pg.eti.kask.kaw.allSet", trainingSet + testingSet)
+					conf.setInt("pl.gda.pg.eti.kask.kaw.folds", folds)
+					conf.setInt("pl.gda.pg.eti.kask.kaw.randomPerFold", randomPerFold)
 					conf.set("pl.gda.pg.eti.kask.kaw.newArticleFile", getNewArticleFileName)
 					conf.set("pl.gda.pg.eti.kask.kaw.dictionaryLocation", getDictionaryLocation)
 

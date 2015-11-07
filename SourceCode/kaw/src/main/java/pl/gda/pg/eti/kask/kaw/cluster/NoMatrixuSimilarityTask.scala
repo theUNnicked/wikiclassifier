@@ -102,9 +102,11 @@ object KnnReducer {
 }
 
 class KnnReducer extends Reducer[Text, PairWritable, Text, Text] {
-
+	
+	private val unpacker = new PairsUnpacker
+	
 	override def reduce(key: Text, values: java.lang.Iterable[PairWritable], context: Reducer[Text, PairWritable, Text, Text]#Context): Unit = {
-		val lists = unpack(values)
+		val lists = unpacker.unpack(values)
 		if(lists._2.isEmpty) {
 			return
 		}
@@ -116,7 +118,9 @@ class KnnReducer extends Reducer[Text, PairWritable, Text, Text] {
 		
 		context.write(key, result)
 	}
-	
+}
+
+class PairsUnpacker {
 	def unpack(values: java.lang.Iterable[PairWritable]): Tuple2[List[Word], List[String]] = {
 		var words = List[Word]()
 		var categories = List[String]()

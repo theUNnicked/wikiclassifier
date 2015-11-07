@@ -5,10 +5,11 @@ import org.junit.Test
 import org.junit.Assert
 import pl.gda.pg.eti.kask.kaw.cluster.PairWritable
 import pl.gda.pg.eti.kask.kaw.cluster.KnnReducer
+import pl.gda.pg.eti.kask.kaw.cluster.PairsUnpacker
 
 class KnnReducerTest {
 	
-	val objectUnderTest = new KnnReducer
+	val objectUnderTest = new PairsUnpacker
   
 	val sofa = new PairWritable("sofa", "1")
 	val chair = new PairWritable("krzeslo", "2")
