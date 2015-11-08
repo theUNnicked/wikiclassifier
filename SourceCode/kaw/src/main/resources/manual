@@ -1,0 +1,32 @@
+kaw.jar [options] [params]
+
+options:
+	--dump dumpIn out: reads wikidumps *pages-articles*.xml file and puts articles in folder on cluster
+	
+	--dump --local dumpIn out: reads wikidumps *pages-articles*.xml file and puts articles in folder on local pc
+	
+	--best in k: finds best categories for article with SS-cut strategy for best 70 percent
+	
+	--best --70p in k: finds best categories for article with SS-cut strategy for best 70 percent
+	
+	--crosvalresults in k: shows results of cross validation with SS-cut strategy for best 70 percent
+	
+	--crosvalresults --70p in k: shows results of cross validation with SS-cut strategy for best 70 percent
+	
+	--wordcount in out: performs Apache Hadoop task for counting words
+	
+	--classify in out: performs Apache Hadoop task for classifing single article
+	
+	--fold in out: performs Apache Hadoop task for folding
+	
+	--crossvalidation in out: performs Apache Hadoop task for cross validation
+	
+params:
+	
+	in: input folder for Apache Hadoop task
+	
+	out: output folder for Apache Hadoop task
+	
+	dumpIn: input *pages-articles*.xml file from Wikipedia dumps
+	
+	k: how many nearest neighbours to take

@@ -13,28 +13,33 @@ import java.util.Properties
 import pl.gda.pg.eti.kask.kaw.knn.CosineSimilarityIndexCounter
 import pl.gda.pg.eti.kask.kaw.cluster.WordCountTask
 import pl.gda.pg.eti.kask.kaw.cluster.NoMatrixuSimilarityTask
+import pl.gda.pg.eti.kask.kaw.grade.CrossValidation
+import pl.gda.pg.eti.kask.kaw.cluster.FoldingClusterTask
+import pl.gda.pg.eti.kask.kaw.cluster.CrossValidationTask
+import java.io.FileInputStream
+import java.util.Scanner
 
-class CategorizationApplicationObject {
-}
+class WrongUsageException extends Exception("Wrong usage, check your parameters and try again");
+class InvalidPropertiesException extends Exception("Wrong parameters, check parameter file [kaw.properties]");
+
+class CategorizationApplicationObject {}
 
 object CategorizationApplicationObject {
 
 	private val logger = LoggerFactory.getLogger(classOf[CategorizationApplicationObject])
 	private val properties = new Properties
-	private var dictionaryLocation = ""
-	private var newArticleFile = ""
-	private var username = ""
-
-	def getNewArticleFileName = { newArticleFile }
-	def getUsername = { username }
-	def getDictionaryLocation = { dictionaryLocation }
 
 	def main(args: Array[String]): Unit = {
 
-		properties.load(classOf[CategorizationApplicationObject].getResourceAsStream("/application.properties"));
-		dictionaryLocation = properties.getProperty("dictionaryLocation")
-		newArticleFile = properties.getProperty("newArticleOutputFile")
-		username = properties.getProperty("userName")
+		if (args.length == 0) {
+			throw new WrongUsageException
+		}
+
+		val propIn = new FileInputStream("../conf/kaw.properties")
+		properties.load(propIn)
+		val dictionaryLocation = properties.getProperty("pl.gda.pg.eti.kask.kaw.dictionaryLocation")
+		val newArticleFile = properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleOutput")
+		val username = properties.getProperty("pl.gda.pg.eti.kask.kaw.userName")
 
 		val folds = properties.getProperty("folds").toInt
 		val randomPerFold = properties.getProperty("randomPerFold").toInt
@@ -42,13 +47,20 @@ object CategorizationApplicationObject {
 		logger.debug("Program start")
 		if (args(0).equals("--dump")) {
 			if (args(1).equals("--local")) {
+				if (args.length > 4) {
+					throw new WrongUsageException
+				}
 				logger.debug("Uruchamiam zczytywanie artykolow z wikidumps (local)")
 				new ArticleReader(args(2), args(3)).readAndUpload();
 				return
 			}
 		}
 
-		val ugi = UserGroupInformation.createRemoteUser(getUsername)
+		if (username == null) {
+			throw new InvalidPropertiesException
+		}
+
+		val ugi = UserGroupInformation.createRemoteUser(username)
 		try {
 			ugi.doAs(new PrivilegedExceptionAction[Void]() {
 
@@ -56,29 +68,71 @@ object CategorizationApplicationObject {
 					logger.debug("Tworze konfiguracje dla klastra")
 					val conf = new Configuration
 
-					conf.set("hadoop.job.ugi", getUsername)
-					// conf.set("mapred.job.tracker", "des01.eti.pg.gda.pl:54311")
-					// conf.set("fs.defaultFS", "hdfs://des01.eti.pg.gda.pl:54310")
-					// conf.set("mapreduce.framework.name", "yarn");
-					// conf.set("yarn.resourcemanager.address", "des01.eti.pg.gda.pl:8032");
-					// conf.set("yarn.resourcemanager.scheduler.address", "des01.eti.pg.gda.pl:8030")
+					conf.set("hadoop.job.ugi", username)
+					val jobtracker = properties.getProperty("hadoop.mapred.job.tracker")
+					if (jobtracker != null) {
+						conf.set("mapred.job.tracker", jobtracker)
+					}
+					val fs = properties.getProperty("hadoop.fs.defaultFS")
+					if (fs != null) {
+						conf.set("fs.defaultFS", fs)
+					}
+					val mrFramework = properties.getProperty("hadoop.mapreduce.framework.name")
+					if (mrFramework != null) {
+						conf.set("mapreduce.framework.name", mrFramework);
+					}
+					val rmAddress = properties.getProperty("hadoop.yarn.resourcemanager.address")
+					if (rmAddress != null) {
+						conf.set("yarn.resourcemanager.address", rmAddress);
+					}
+					val rmScheduler = properties.getProperty("hadoop.yarn.resourcemanager.scheduler.address")
+					if (rmScheduler != null) {
+						conf.set("yarn.resourcemanager.scheduler.address", rmScheduler)
+					}
 
 					conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName())
 					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
 
 					conf.setInt("pl.gda.pg.eti.kask.kaw.folds", folds)
 					conf.setInt("pl.gda.pg.eti.kask.kaw.randomPerFold", randomPerFold)
-					conf.set("pl.gda.pg.eti.kask.kaw.newArticleFile", getNewArticleFileName)
-					conf.set("pl.gda.pg.eti.kask.kaw.dictionaryLocation", getDictionaryLocation)
-
+					conf.set("pl.gda.pg.eti.kask.kaw.newArticleFile", newArticleFile)
+					conf.set("pl.gda.pg.eti.kask.kaw.dictionaryLocation", dictionaryLocation)
+					val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if (p._2 > max * 0.7) true else false }
 					if (args(0).equals("--best")) {
-						println("Wybrane kategorie dla artykulu Dota_2:")
-						val strategyBest70Percent: (Double, Tuple2[String, Double]) => Boolean = { (max, p) => if (p._2 > max * 0.7) true else false }
 						if (args(1).equals("--70p")) {
-							new CosineSimilarityIndexCounter().getBestCategories(conf, args(2), args(3).toInt, true)(strategyBest70Percent).foreach { x => println(x) }
-						} else {
-							new CosineSimilarityIndexCounter().getBestCategories(conf, args(1), args(2).toInt, true)(strategyBest70Percent).foreach { x => println(x) }
+							if (args.length > 4) {
+								throw new WrongUsageException
+							}
+							new CosineSimilarityIndexCounter().getBestCategories(conf, args(2), args(3).toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
 						}
+						else {
+							if (args.length > 3) {
+								throw new WrongUsageException
+							}
+							new CosineSimilarityIndexCounter().getBestCategories(conf, args(1), args(2).toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
+						}
+						return null
+					}
+
+					if (args(0).equals("--crosvalresults")) {
+						val hdfs = FileSystem.get(conf)
+						if (args(1).equals("--70p")) {
+							if (args.length > 4) {
+								throw new WrongUsageException
+							}
+							new CrossValidation().validate(args(2), hdfs, args(3).toInt)(strategyBest70Percent).foreach { case (name, res) ⇒ println("Article name: " + name + ", Prediction: " + res.toString) }
+						}
+						else {
+							if (args.length > 3) {
+								throw new WrongUsageException
+							}
+							new CrossValidation().validate(args(1), hdfs, args(2).toInt)(strategyBest70Percent).foreach { case (name, res) ⇒ println("Article name: " + name + ", Prediction: " + res.toString) }
+						}
+						return null
+					}
+
+					if (args.length > 3) {
+						throw new WrongUsageException
 					}
 
 					if (args(0).equals("--dump")) {
@@ -92,21 +146,59 @@ object CategorizationApplicationObject {
 						return null
 					}
 
-					val b = args.toBuffer
-					b.remove(0)
 					if (args(0).equals("--wordcount")) {
 						val task = new WordCountTask
-						System.exit(task.runTask(conf, b.toArray))
-					} else if (args(0).equals("--classify")) {
+						if (args.length < 3) {
+							val inputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountInput")
+							val outputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput")
+							System.exit(task.runTask(conf, Array[String](inputDir, outputDir)))
+						}
+						System.exit(task.runTask(conf, args.takeRight(2)))
+					}
+					else if (args(0).equals("--classify")) {
 						val task = new NoMatrixuSimilarityTask
-						System.exit(task.runTask(conf, b.toArray))
+						if (args.length < 3) {
+							val inputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierInput")
+							val outputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
+							System.exit(task.runTask(conf, Array[String](inputDir, outputDir)))
+						}
+						System.exit(task.runTask(conf, args.takeRight(2)))
+					}
+					else if (args(0).equals("--fold")) {
+						val task = new FoldingClusterTask
+						if (args.length < 3) {
+							val inputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingInput")
+							val outputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingOutput")
+							System.exit(task.runTask(conf, Array[String](inputDir, outputDir)))
+						}
+						System.exit(task.runTask(conf, args.takeRight(2)))
+					}
+					else if (args(0).equals("--crossvalidation")) {
+						val task = new CrossValidationTask
+						if (args.length < 3) {
+							val inputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationInput")
+							val outputDir = properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
+							System.exit(task.runTask(conf, Array[String](inputDir, outputDir)))
+						}
+						System.exit(task.runTask(conf, args.takeRight(2)))
 					}
 
 					return null
 				}
 			})
-		} catch {
+		}
+		catch {
+			case ipe: InvalidPropertiesException ⇒ println(ipe.getMessage)
+			case wue: WrongUsageException ⇒
+				println(wue.getMessage); printManual
 			case e: Exception ⇒ e.printStackTrace
+		}
+	}
+
+	private def printManual {
+		val sc = new Scanner(classOf[CategorizationApplicationObject].getResourceAsStream("/manual"), "UTF-8")
+		while (sc.hasNextLine()) {
+			println(sc.nextLine())
 		}
 	}
 }

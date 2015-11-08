@@ -17,6 +17,8 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import pl.gda.pg.eti.kask.kaw.knn.CosineDistance
 import org.apache.hadoop.io.Text
+import java.util.Scanner
+import scala.collection.mutable.MutableList
 
 class NoMatrixuSimilarityTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
@@ -34,30 +36,29 @@ class NoMatrixuSimilarityTask extends ClusterTask {
 	}
 }
 
-
 class Word(private var word: String, private var count: Int) {
 	def getWord = { word }
 	def getCount = { count }
 }
 
 class PairWritable(var left: String, var right: String) extends Writable {
-	
+
 	def getLeft = { left }
 	def getRight = { right }
-	
+
 	def setLeft(left: String) { this.left = left }
 	def setRight(right: String) { this.right = right }
-	
+
 	def this() {
 		this("", "")
 	}
-	
+
 	override def readFields(in: DataInput): Unit = {
-		val txt =new Text()
+		val txt = new Text()
 		txt.readFields(in)
 		left = txt.toString()
-		
-		val txt2 =new Text()
+
+		val txt2 = new Text()
 		txt2.readFields(in)
 		right = txt2.toString()
 	}
@@ -77,11 +78,12 @@ class WordCountReader extends Mapper[Object, Text, Text, PairWritable] {
 		val parts = value.toString.split("\t")
 		if (parts(1).equals("::Cat")) {
 			var i = 2
-			while(i < parts.length) {
+			while (i < parts.length) {
 				context.write(new Text(parts(0)), new PairWritable(parts(1), parts(i)))
 				i = i + 1
 			}
-		} else {
+		}
+		else {
 			context.write(new Text(parts(0)), new PairWritable(parts(1), parts(2)))
 		}
 	}
@@ -89,75 +91,83 @@ class WordCountReader extends Mapper[Object, Text, Text, PairWritable] {
 
 object KnnReducer {
 	private val distanceCounter = new CosineDistance
-	
+
 	private var newArticleLists: Tuple2[List[Word], List[String]] = null
-	
+
 	def getNewArticleLists(conf: Configuration): Tuple2[List[Word], List[String]] = {
-		if(newArticleLists == null) {
+		if (newArticleLists == null) {
 			newArticleLists = new NewArticleUnpacker(conf.get("pl.gda.pg.eti.kask.kaw.newArticleFileName"), conf).unpack()
 		}
 		newArticleLists
 	}
-	
+
 }
 
 class KnnReducer extends Reducer[Text, PairWritable, Text, Text] {
-	
+
 	private val unpacker = new PairsUnpacker
-	
+
 	override def reduce(key: Text, values: java.lang.Iterable[PairWritable], context: Reducer[Text, PairWritable, Text, Text]#Context): Unit = {
 		val lists = unpacker.unpack(values)
-		if(lists._2.isEmpty) {
+		if (lists._2.isEmpty) {
 			return
 		}
 		val newArticleLists = KnnReducer.getNewArticleLists(context.getConfiguration)
 		val dist = KnnReducer.distanceCounter.getDistance(lists._1, newArticleLists._1)
-		
-		val resultStr = lists._2.foldLeft(dist.toString()) { (str, cat) => str + "\t" + cat }
+
+		val resultStr = lists._2.foldLeft(dist.toString()) { (str, cat) ⇒ str + "\t" + cat }
 		val result = new Text(resultStr)
-		
+
 		context.write(key, result)
 	}
 }
 
 class PairsUnpacker {
 	def unpack(values: java.lang.Iterable[PairWritable]): Tuple2[List[Word], List[String]] = {
-		var words = List[Word]()
-		var categories = List[String]()
-		
-		values.foreach { x => 
-			if(x.left.equals("::Cat")) {
-				categories = categories :+ x.right
+		val words = MutableList[Word]()
+		val categories = MutableList[String]()
+
+		values.foreach { x ⇒
+			if (x.left.equals("::Cat")) {
+				categories += x.right
 			}
 			else {
-				words = words :+ new Word(x.left, x.right.toInt)
+				words += new Word(x.left, x.right.toInt)
 			}
 		}
-		
-		(words, categories)
+
+		(words.toList, categories.toList)
 	}
 }
 
-class NewArticleUnpacker(private val fileName: String, private val conf: Configuration) {
-	
+class NewArticleUnpacker(private val outputDir: String, private val conf: Configuration) {
+
 	def unpack(): Tuple2[List[Word], List[String]] = {
-		var words = List[Word]()
-		var categories = List[String]()
-		
+		val words = MutableList[Word]()
+		val categories = List[String]()
+
 		val hdfs = FileSystem.get(conf)
-		val in = hdfs.open(new Path(fileName))
-		
-		val bin = new BufferedReader(new InputStreamReader(in))
-		Stream.continually(bin.readLine()).takeWhile(_ != null).foreach { value => 
-			val parts = value.toString.split("\t")
-			if (!parts(1).equals("::Cat")) {
-				words = words :+ new Word(parts(1), parts(2).toInt)
+
+		val files = hdfs.listStatus(new Path(outputDir));
+		var i = 0
+
+		for (i ← 0 to files.length - 1) {
+			if (!files(i).getPath.toString.contains(".crc")) {
+				val file = hdfs.open(files(i).getPath)
+				val scanner = new Scanner(file, "UTF-8");
+				while (scanner.hasNextLine()) {
+					val value = scanner.nextLine()
+					val parts = value.toString.split("\t")
+					if (!parts(1).equals("::Cat")) {
+						words += new Word(parts(1), parts(2).toInt)
+					}
+
+				}
+				file.close()
+				scanner.close()
 			}
 		}
-		bin.close
-		in.close
-		
-		(words, categories)
+		(words.toList, categories)
 	}
-	
+
 }
