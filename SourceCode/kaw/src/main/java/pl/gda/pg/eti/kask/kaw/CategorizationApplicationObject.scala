@@ -31,37 +31,38 @@ object CategorizationApplicationObject {
 
 	def main(args: Array[String]): Unit = {
 
-		if (args.length == 0) {
-			throw new WrongUsageException
-		}
-
-		val propIn = new FileInputStream("../conf/kaw.properties")
-		properties.load(propIn)
-		val dictionaryLocation = properties.getProperty("pl.gda.pg.eti.kask.kaw.dictionaryLocation")
-		val newArticleFile = properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleOutput")
-		val username = properties.getProperty("pl.gda.pg.eti.kask.kaw.userName")
-
-		val folds = properties.getProperty("folds").toInt
-		val randomPerFold = properties.getProperty("randomPerFold").toInt
-
-		logger.debug("Program start")
-		if (args(0).equals("--dump")) {
-			if (args(1).equals("--local")) {
-				if (args.length > 4) {
-					throw new WrongUsageException
-				}
-				logger.debug("Uruchamiam zczytywanie artykolow z wikidumps (local)")
-				new ArticleReader(args(2), args(3)).readAndUpload();
-				return
-			}
-		}
-
-		if (username == null) {
-			throw new InvalidPropertiesException
-		}
-
-		val ugi = UserGroupInformation.createRemoteUser(username)
 		try {
+			if (args.length == 0) {
+				throw new WrongUsageException
+			}
+
+			val propIn = new FileInputStream("../conf/kaw.properties")
+			properties.load(propIn)
+			val dictionaryLocation = properties.getProperty("pl.gda.pg.eti.kask.kaw.dictionaryLocation")
+			val newArticleFile = properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleOutput")
+			val username = properties.getProperty("pl.gda.pg.eti.kask.kaw.userName")
+
+			val folds = properties.getProperty("pl.gda.pg.eti.kask.kaw.folds").toInt
+			val randomPerFold = properties.getProperty("pl.gda.pg.eti.kask.kaw.randomPerFold").toInt
+
+			logger.debug("Program start")
+			if (args(0).equals("--dump")) {
+				if (args(1).equals("--local")) {
+					if (args.length > 4) {
+						throw new WrongUsageException
+					}
+					logger.debug("Uruchamiam zczytywanie artykolow z wikidumps (local)")
+					new ArticleReader(args(2), args(3)).readAndUpload();
+					return
+				}
+			}
+
+			if (username == null) {
+				throw new InvalidPropertiesException
+			}
+
+			val ugi = UserGroupInformation.createRemoteUser(username)
+
 			ugi.doAs(new PrivilegedExceptionAction[Void]() {
 
 				override def run(): Void = {

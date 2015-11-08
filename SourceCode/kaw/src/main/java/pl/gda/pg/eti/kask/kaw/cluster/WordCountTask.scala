@@ -18,7 +18,7 @@ import pl.gda.pg.eti.kask.kaw.variates.DictionaryTree
 
 class WordCountTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
-		val job = Job.getInstance(conf, "Word count in Scala");
+		val job = Job.getInstance(conf, "Word count task");
 		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 		//job.setJarByClass(classOf[WordCountTask])
 		job.setMapperClass(classOf[TokenizerMapper])

@@ -31,7 +31,7 @@ class CrossValidationTask extends ClusterTask {
 			conf.setInt("pl.gda.pg.eti.kask.kaw.currentFold", i)
 			conf.set("pl.gda.pg.eti.kask.kaw.crossValidationInputFolder", args(0))
 
-			val job = Job.getInstance(conf, "Word count in Scala");
+			val job = Job.getInstance(conf, "Cross Validation task");
 			job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 			job.setMapperClass(classOf[WordCountReader])
 			job.setReducerClass(classOf[FoldingReducer])
