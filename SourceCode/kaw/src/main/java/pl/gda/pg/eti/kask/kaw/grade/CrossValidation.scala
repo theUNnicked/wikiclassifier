@@ -14,7 +14,7 @@ import pl.gda.pg.eti.kask.kaw.knn.NearestNeighboursCategoryExtractor
 
 class CrossValidation {
 
-	def validate(outputDir: String, hdfs: FileSystem, k: Int)(thresholdingStrategy: (Double, Tuple2[String, Double]) ⇒ Boolean) {
+	def validate(outputDir: String, hdfs: FileSystem, k: Int)(thresholdingStrategy: (Double, Tuple2[String, Double]) ⇒ Boolean) = {
 		val resultsMap = scala.collection.mutable.Map[String, Double]()
 		val files = hdfs.listStatus(new Path(outputDir));
 		var i = 0
@@ -29,12 +29,18 @@ class CrossValidation {
 					val expectedCategories = extractExpectedCategories(line)
 					val articles = extractKBestArticles(line, k)
 					val predictedCategories = extractPredictedCategories(articles)(thresholdingStrategy)
-
+					if (resultsMap.contains(articleName)) {
+						resultsMap(articleName) = (resultsMap(articleName) + compare(expectedCategories, predictedCategories)) / 2.0
+					}
+					else {
+						resultsMap += articleName -> compare(expectedCategories, predictedCategories)
+					}
 				}
 				file.close()
 				scanner.close()
 			}
 		}
+		resultsMap
 	}
 
 	private def extractExpectedCategories(line: String) = {
@@ -56,7 +62,7 @@ class CrossValidation {
 		extractor.extractCategories(bestNeighbours, extractCategoriesWithSimilarityFromString, thresholdingStrategy)
 	}
 
-	private def compare(k: Int, expectedCategories: List[String], predictedCategories: List[String]): Double = {
+	private def compare(expectedCategories: List[String], predictedCategories: List[String]): Double = {
 		var n = 0
 		expectedCategories.foreach { expected ⇒
 			if (predictedCategories.contains(expected)) {
