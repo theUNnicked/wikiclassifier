@@ -44,6 +44,11 @@ object TokenizerMapper {
 		}
 		dictionary.getWordLexem(word)
 	}
+	
+	def disposeDictionary {
+	  dictionary = null
+	  System.gc()
+	}
 }
 
 class TokenizerMapper extends Mapper[Object, Text, Text, Text] {

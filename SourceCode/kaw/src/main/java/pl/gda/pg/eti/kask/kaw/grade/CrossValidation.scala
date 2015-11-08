@@ -53,7 +53,7 @@ class CrossValidation {
 		val hasElement = { (sims: AnyRef, id: Int) ⇒ sims.asInstanceOf[Array[String]].length > id + 1 }
 		val takeElement = { (sims: AnyRef, id: Int) ⇒ sims.asInstanceOf[Array[String]](id + 1) }
 		val extractSimilarity = { s: String ⇒ s.substring(s.indexOf('[') + 1, s.indexOf(',')).toDouble }
-		extractor.extractKNearestNeighbours(similarities, hasElement, takeElement, extractSimilarity)
+		extractor.extractKNearestNeighbours(null, similarities, hasElement, takeElement, extractSimilarity)
 	}
 
 	private def extractPredictedCategories(bestNeighbours: Array[String])(thresholdingStrategy: (Double, Tuple2[String, Double]) ⇒ Boolean) = {

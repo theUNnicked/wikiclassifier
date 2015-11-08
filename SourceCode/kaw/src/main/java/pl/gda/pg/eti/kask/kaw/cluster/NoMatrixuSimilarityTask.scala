@@ -96,7 +96,7 @@ object KnnReducer {
 
 	def getNewArticleLists(conf: Configuration): Tuple2[List[Word], List[String]] = {
 		if (newArticleLists == null) {
-			newArticleLists = new NewArticleUnpacker(conf.get("pl.gda.pg.eti.kask.kaw.newArticleFileName"), conf).unpack()
+			newArticleLists = new NewArticleUnpacker(conf.get("pl.gda.pg.eti.kask.kaw.newArticleOutput"), conf).unpack()
 		}
 		newArticleLists
 	}

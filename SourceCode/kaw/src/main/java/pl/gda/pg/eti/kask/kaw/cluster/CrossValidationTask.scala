@@ -27,8 +27,8 @@ class CrossValidationTask extends ClusterTask {
 		CrossValidationTask.logger.debug("Rozpoczynam kroswalidacje, liczba foldow {}", folds)
 		var i = 0;
 		for (i ← 1 to folds) {
-			CrossValidationTask.logger.debug("Rozpoczynam fold", i)
-			conf.setInt("pl.gda.pg.eti.kask.kaw.currentFold", i)
+			CrossValidationTask.logger.debug("Rozpoczynam fold numer {}", i)
+			conf.setInt("pl.gda.pg.eti.kask.kaw.currentFold", (i - 1))
 			conf.set("pl.gda.pg.eti.kask.kaw.crossValidationInputFolder", args(0))
 
 			val job = Job.getInstance(conf, "Cross Validation task");
@@ -37,6 +37,7 @@ class CrossValidationTask extends ClusterTask {
 			job.setReducerClass(classOf[FoldingReducer])
 			job.setOutputKeyClass(classOf[Text])
 			job.setOutputValueClass(classOf[Text])
+			job.setMapOutputValueClass(classOf[PairWritable])
 
 			FileInputFormat.addInputPath(job, new Path(args(0)))
 			FileOutputFormat.setOutputPath(job, new Path(args(1) + i.toString))

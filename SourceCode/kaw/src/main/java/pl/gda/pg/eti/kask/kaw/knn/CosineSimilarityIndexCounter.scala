@@ -21,7 +21,9 @@ class CosineSimilarityIndexCounter() {
 				val split = x.split("\t")
 				(split(1).toDouble, split.takeRight(split.length - 2).toList)
 			}
-			null
+			else {
+			  null
+			}
 		}
 		extractor.extractCategories(extractKBestArticlesAsArray(conf, outputDir, k), extractCategoriesWithSimilarityFromString, thresholdingStrategy)
 	}
@@ -38,13 +40,7 @@ class CosineSimilarityIndexCounter() {
 				val hasNext = { (scan: AnyRef, lineNo: Int) ⇒ scanner.asInstanceOf[Scanner].hasNext() }
 				val getNext = { (scan: AnyRef, lineNo: Int) ⇒ scanner.asInstanceOf[Scanner].nextLine() }
 				val extractSimilarity = { (line: String) ⇒ line.split("\t")(1).toDouble }
-				extractor.extractKNearestNeighbours(scanner, hasNext, getNext, extractSimilarity)
-				while (scanner.hasNextLine()) {
-					val line = scanner.nextLine()
-					if (line != null && !line.isEmpty()) {
-
-					}
-				}
+				best = extractor.extractKNearestNeighbours(best, scanner, hasNext, getNext, extractSimilarity)
 				file.close()
 				scanner.close()
 			}

@@ -8,3 +8,9 @@ serializedDictionary.txt
 newarticle/
 newarticlecounted/
 similarityresult/
+classifierOutput/
+foldingOutput/
+newArticleInput/
+newArticleOutput/
+wordCountInput/
+wordCountOutput/

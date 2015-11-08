@@ -18,6 +18,8 @@ import pl.gda.pg.eti.kask.kaw.cluster.FoldingClusterTask
 import pl.gda.pg.eti.kask.kaw.cluster.CrossValidationTask
 import java.io.FileInputStream
 import java.util.Scanner
+import pl.gda.pg.eti.kask.kaw.cluster.NoMatrixuSimilarityTask
+import pl.gda.pg.eti.kask.kaw.cluster.TokenizerMapper
 
 class WrongUsageException extends Exception("Wrong usage, check your parameters and try again");
 class InvalidPropertiesException extends Exception("Wrong parameters, check parameter file [kaw.properties]");
@@ -47,7 +49,7 @@ object CategorizationApplicationObject {
 
 			logger.debug("Program start")
 			if (args(0).equals("--dump")) {
-				if (args(1).equals("--local")) {
+				if (args.length > 1 && args(1).equals("--local")) {
 					if (args.length > 4) {
 						throw new WrongUsageException
 					}
@@ -96,28 +98,99 @@ object CategorizationApplicationObject {
 
 					conf.setInt("pl.gda.pg.eti.kask.kaw.folds", folds)
 					conf.setInt("pl.gda.pg.eti.kask.kaw.randomPerFold", randomPerFold)
-					conf.set("pl.gda.pg.eti.kask.kaw.newArticleFile", newArticleFile)
+					conf.set("pl.gda.pg.eti.kask.kaw.newArticleOutput", newArticleFile)
 					conf.set("pl.gda.pg.eti.kask.kaw.dictionaryLocation", dictionaryLocation)
-					val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if (p._2 > max * 0.7) true else false }
+					
+					val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if (p._2 > max * 0.9) true else false }
+					
+					if(args(0).equals("--auto")) {
+					  if(args(1).equals("--classify")) {
+					    // word count on new article
+					    val naWcIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleInput")
+							val naWcOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleOutput")
+							new WordCountTask().runTask(conf, Array[String](naWcIn, naWcOut))
+							
+							// word count on other articles
+					    val wcIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountInput")
+							val wcOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput")
+							new WordCountTask().runTask(conf, Array[String](wcIn, wcOut))
+							
+							CategorizationApplicationObject.logger.debug("Usuwanie slownika odmian")
+							TokenizerMapper.disposeDictionary
+							CategorizationApplicationObject.logger.debug("Usunieto, zwalnianie pamieci przez garbage collector..")
+							
+							// similarity on all article
+					    val kIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierInput")
+							val kOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
+							new NoMatrixuSimilarityTask().runTask(conf, Array[String](kIn, kOut))
+							
+							// best results
+					    val bIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
+							val bK = properties.getProperty("pl.gda.pg.eti.kask.kaw.k")
+							println("Wyniki klasyfikacji:")
+							new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
+					    return null
+					  }
+					  else if(args(1).equals("--crossvalidation")) {
+					    // word count on articles
+					    val wcIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountInput")
+							val wcOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput")
+							new WordCountTask().runTask(conf, Array[String](wcIn, wcOut))
+							
+							CategorizationApplicationObject.logger.debug("Usuwanie slownika odmian")
+							TokenizerMapper.disposeDictionary
+							CategorizationApplicationObject.logger.debug("Usunieto, zwalnianie pamieci przez garbage collector..")
+							
+							// folding on articles
+					    val fIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingInput")
+							val fOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingOutput")
+							new FoldingClusterTask().runTask(conf, Array[String](fIn, fOut))
+							
+							// cross validate articles
+					    val cvIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationInput")
+							val cvOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
+							new WordCountTask().runTask(conf, Array[String](cvIn, cvOut))
+							
+							// read results
+							// TODO
+					  }
+					}
+					
 					if (args(0).equals("--best")) {
-						if (args(1).equals("--70p")) {
-							if (args.length > 4) {
-								throw new WrongUsageException
-							}
-							new CosineSimilarityIndexCounter().getBestCategories(conf, args(2), args(3).toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
-						}
+					  var bIn = ""
+					  var bK = ""
+					  if(args.length == 4) {
+					    bIn = args(2)
+							bK = args(3)
+					  }
+					  else if (args.length == 3) {
+					    bIn = args(1)
+							bK = args(2)
+					  }
+					  else {
+					    bIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
+							bK = properties.getProperty("pl.gda.pg.eti.kask.kaw.k")
+					  }
+					  if (args.length > 2) {
+  						if (args(1).equals("--90p")) {
+  							if (args.length > 4) {
+  								throw new WrongUsageException
+  							}
+  							new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
+  						}
+					  }
 						else {
 							if (args.length > 3) {
 								throw new WrongUsageException
 							}
-							new CosineSimilarityIndexCounter().getBestCategories(conf, args(1), args(2).toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
+							new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
 						}
 						return null
 					}
 
 					if (args(0).equals("--crosvalresults")) {
 						val hdfs = FileSystem.get(conf)
-						if (args(1).equals("--70p")) {
+						if (args(1).equals("--90p")) {
 							if (args.length > 4) {
 								throw new WrongUsageException
 							}
@@ -140,7 +213,14 @@ object CategorizationApplicationObject {
 						logger.debug("Pobieram system plikow z konfiguracji")
 						val hdfs = FileSystem.get(conf)
 						logger.debug("Uruchamiam zczytywanie artykolow z wikidumps")
-						new DistributedArticleReader(args(1), args(2), hdfs).readAndUpload();
+						if(args.length < 3) {
+						  val dumpIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.localDumpsInput")
+						  val dumpOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.dumpsOutput")
+						  new DistributedArticleReader(dumpIn, dumpOut, hdfs).readAndUpload();
+						}
+						else {
+						  new DistributedArticleReader(args(1), args(2), hdfs).readAndUpload();
+						}
 						logger.debug("Zamykam system plikow")
 						hdfs.close
 						System.exit(0)

@@ -2,9 +2,16 @@ package pl.gda.pg.eti.kask.kaw.knn
 
 class KNearestNeighboursExtract(private val k: Int) {
 
-	def extractKNearestNeighbours(stream: AnyRef, hasElement: ((AnyRef, Int) ⇒ Boolean), takeElement: ((AnyRef, Int) ⇒ String), extractSimilarity: (String ⇒ Double)): Array[String] = {
-		var best = Array.fill(k) { "" }
+	def extractKNearestNeighbours(bestFromPreviousStep: Array[String], stream: AnyRef, hasElement: ((AnyRef, Int) ⇒ Boolean), takeElement: ((AnyRef, Int) ⇒ String), extractSimilarity: (String ⇒ Double)): Array[String] = {
+		var best = bestFromPreviousStep
 		var min = (0, 0.0)
+		if(best == null) {
+		  best = Array.fill(k) { "" }
+		}
+		else {
+		  min = findMinimumWithIndex(best)
+		}
+	  
 		var lastIndex = 0
 		while (hasElement(stream, lastIndex)) {
 			val nextLine = takeElement(stream, lastIndex)
@@ -24,7 +31,9 @@ class KNearestNeighboursExtract(private val k: Int) {
 				val sim = x._1.split("\t")(1).toDouble
 				if (sim < last._2) (x._2, sim) else last
 			}
-			last
+			else {
+			  (x._2, 0.0)
+			}
 		}
 	}
 

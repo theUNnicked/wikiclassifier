@@ -26,6 +26,7 @@ class FoldingClusterTask extends ClusterTask {
 		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 		job.setMapperClass(classOf[WordCountReader])
 		job.setReducerClass(classOf[FoldingReducer])
+		job.setMapOutputValueClass(classOf[PairWritable])
 		job.setOutputKeyClass(classOf[Text])
 		job.setOutputValueClass(classOf[Text])
 		FileInputFormat.addInputPath(job, new Path(args(0)))
@@ -33,7 +34,7 @@ class FoldingClusterTask extends ClusterTask {
 		val folds = conf.getInt("pl.gda.pg.eti.kask.kaw.folds", 10)
 		var i = 0;
 		for (i ← 0 to folds) {
-			MultipleOutputs.addNamedOutput(job, "set" + i.toString, classOf[FileOutputFormat[Text, Text]], classOf[Text], classOf[Text])
+			MultipleOutputs.addNamedOutput(job, "set" + i.toString, classOf[TextOutputFormat[Text, Text]], classOf[Text], classOf[Text])
 		}
 		FileOutputFormat.setOutputPath(job, new Path(args(1)))
 		if (job.waitForCompletion(true)) 0 else 1
