@@ -28,6 +28,8 @@ class CrossValidation {
 					val articleName = line.substring(0, line.indexOf('['))
 					val expectedCategories = extractExpectedCategories(line)
 					val articles = extractKBestArticles(line, k)
+					val predictedCategories = extractPredictedCategories(articles)(thresholdingStrategy)
+
 				}
 				file.close()
 				scanner.close()
