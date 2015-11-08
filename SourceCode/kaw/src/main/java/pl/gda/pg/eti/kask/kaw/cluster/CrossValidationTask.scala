@@ -26,7 +26,7 @@ class CrossValidationTask extends ClusterTask {
 		val folds = conf.getInt("pl.gda.pg.eti.kask.kaw.folds", 10)
 		CrossValidationTask.logger.debug("Rozpoczynam kroswalidacje, liczba foldow {}", folds)
 		var i = 0;
-		for (i <- 1 to folds) {
+		for (i ← 1 to folds) {
 			CrossValidationTask.logger.debug("Rozpoczynam fold", i)
 			conf.setInt("pl.gda.pg.eti.kask.kaw.currentFold", i)
 			conf.set("pl.gda.pg.eti.kask.kaw.crossValidationInputFolder", args(0))
@@ -66,7 +66,7 @@ class SetsMapper extends Mapper[Object, Text, Text, PairWritable] {
 		val newKey = new Text(split(0))
 		var i = 1
 		for (
-			i <- 1 to split.length; if i % 2 == 1
+			i ← 1 to split.length; if i % 2 == 1
 		) {
 			context.write(newKey, new PairWritable(split(i), split(i + 1)))
 		}
@@ -88,19 +88,19 @@ class CrossValidationReducer extends Reducer[Text, PairWritable, Text, Text] {
 		val hdfs = FileSystem.get(context.getConfiguration)
 
 		val thisSetList = listThisSet(currentFold, inputFolder, hdfs)
-		thisSetList.foreach { path =>
+		thisSetList.foreach { path ⇒
 			val file = hdfs.open(path)
 			val bin = new BufferedReader(new InputStreamReader(file))
-			Stream.continually(bin.readLine).takeWhile(_ != null).foreach { line =>
+			Stream.continually(bin.readLine).takeWhile(_ != null).foreach { line ⇒
 				if (line != null && !line.isEmpty()) {
 					val testingLists = unpackArticleFromLine(line)
 					val dist = distanceCounter.getDistance(lists._1, testingLists._1)
-			
-					val foldingFunc : ((String, String) => String) = { (str, cat) => str + "\t" }
-					val resultStr = testingLists._2.foldLeft(lists._2.foldLeft(dist.toString() + "\t::TrainCats")(foldingFunc) + "\t::TestCats" )(foldingFunc)
-					val result = new Text(resultStr)
+
+					val foldingFunc: ((String, String) ⇒ String) = { (str, cat) ⇒ str + "," }
 					val fileName = FilenameUtils.getBaseName(path.toString)
-					context.write(new Text("["+fileName + "," + key.toString+"]"), result)
+					val keyStr = testingLists._2.foldLeft(fileName + "[")(foldingFunc) + "]"
+					val resultStr = lists._2.foldLeft(key.toString() + "[" + dist.toString + ",")(foldingFunc) + "]"
+					context.write(new Text(keyStr), new Text(resultStr))
 				}
 			}
 			bin.close
@@ -112,7 +112,7 @@ class CrossValidationReducer extends Reducer[Text, PairWritable, Text, Text] {
 		val files = hdfs.listStatus(new Path(inputFolder))
 		var paths = List[Path]()
 		var i = 0
-		for (i <- 1 to files.length) {
+		for (i ← 1 to files.length) {
 			val filePath = files(i).getPath
 			if (filePath.toString.contains("set" + currentFold.toString + "-")) {
 				paths = paths :+ filePath
@@ -121,14 +121,14 @@ class CrossValidationReducer extends Reducer[Text, PairWritable, Text, Text] {
 		paths
 	}
 
-	private def unpackArticleFromLine(line: String) : Tuple2[List[Word], List[String]] = {
+	private def unpackArticleFromLine(line: String): Tuple2[List[Word], List[String]] = {
 		var words = List[Word]()
 		var cats = List[String]()
 		val split = line.toString().split("\t")
 		val newKey = new Text(split(0))
 		var i = 1
-		for (i <- 1 to split.length) {
-			if(split(i).equals("::Cat")) {
+		for (i ← 1 to split.length) {
+			if (split(i).equals("::Cat")) {
 				cats = cats :+ split(i + 1)
 			}
 			else {
