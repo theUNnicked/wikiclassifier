@@ -1,3 +1,4 @@
+package pl.gda.pg.eti.kask.kaw.io;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -111,7 +112,7 @@ public class SplitScanner {
 					return false;
 				}
 			}
-			String temp = bufferedText + new String(byteArray, "US-ASCII");
+			String temp = bufferedText + new String(byteArray, "UTF-8");
 			int lineSplitLocation = temp.indexOf('\n');
 			if (lineSplitLocation != -1) {
 				nextLine = true;
