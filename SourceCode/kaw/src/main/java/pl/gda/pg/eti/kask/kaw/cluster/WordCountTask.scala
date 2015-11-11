@@ -58,7 +58,8 @@ class TokenizerMapper extends Mapper[Object, Text, Text, Text] {
 
 	override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, Text]#Context): Unit = {
 
-		val valueString = value.toString
+	  val wrongWords = """(\[\[:{0,1}Grafika:.+\]\])|(\[\[:{0,1}Media:.+\]\])|(\{\{Przypisy)|(\{\{Uwagi)|(\{\{SORTUJ:.+}})|(\{\{subst:.+}})|(\{\{Dokumentacja)|(<ref>|<\/ref>|<small>|<\/small>|<del>|<\/del>|<sup>|<\/sup>|<sub>|<\/sub>|<code>|<\/code>|<math>.+<\/math>|<nowiki>|<\/nowiki>|<includeonly>|<\/includeonly>|<noinclude>|<\/noinclude>)(\{\{Ujednoznacznienie}})|(\{\{Dokumentacja}})|(http:\/\/[a-zA-z0-9._+/\-?&=]+)|(\[\[Plik:.+\]\])|(\#PATRZ.+\[\[.+\]\])|(\{\{Inne znaczenia)|(\{\{Ujednoznacznienie)""".r
+		val valueString = wrongWords.replaceAllIn(value.toString, "")
 		val wordsReg = """([a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿŒœŠšŸ]{2,})|(([0-9]{4})-([0-9]{2})-([0-9]{2}))|([0-9]{4})""".r
 		val path = context.getInputSplit.asInstanceOf[FileSplit].getPath
 		val fileName = FilenameUtils.getBaseName(path.toString)

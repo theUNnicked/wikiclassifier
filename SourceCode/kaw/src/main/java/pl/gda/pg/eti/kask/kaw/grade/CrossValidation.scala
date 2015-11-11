@@ -10,6 +10,7 @@ import java.util.Scanner
 import scala.collection.mutable.MutableList
 import pl.gda.pg.eti.kask.kaw.knn.KNearestNeighboursExtract
 import pl.gda.pg.eti.kask.kaw.knn.NearestNeighboursCategoryExtractor
+import pl.gda.pg.eti.kask.kaw.io.SplitScanner
 //import.pl.gda.pg.eti.kask.kaw.knn.CosineSimilarityIndexCounter
 
 class CrossValidation {
@@ -22,12 +23,13 @@ class CrossValidation {
 		for (i ← 0 to files.length - 1) {
 			if (!files(i).getPath.toString.contains(".crc")) {
 				val file = hdfs.open(files(i).getPath)
-				val scanner = new Scanner(file, "UTF-8");
+				val scanner = new SplitScanner(file)
 				while (scanner.hasNextLine()) {
-					val line = scanner.nextLine();
-					val articleName = line.substring(0, line.indexOf('['))
+				  scanner.takeNextLine()
+					val line = scanner.takeNext()
+					val articleName = scanner.takeNext()
 					val expectedCategories = extractExpectedCategories(line)
-					val articles = extractKBestArticles(line, k)
+					val articles = extractKBestArticles(scanner, k)
 					val predictedCategories = extractPredictedCategories(articles)(thresholdingStrategy)
 					if (resultsMap.contains(articleName)) {
 						resultsMap(articleName) = (resultsMap(articleName) + compare(expectedCategories, predictedCategories)) / 2.0
@@ -37,7 +39,6 @@ class CrossValidation {
 					}
 				}
 				file.close()
-				scanner.close()
 			}
 		}
 		resultsMap
@@ -47,13 +48,12 @@ class CrossValidation {
 		line.substring(line.indexOf('[') + 1, line.indexOf(']')).split("\t").toList
 	}
 
-	private def extractKBestArticles(line: String, k: Int) = {
+	private def extractKBestArticles(scanner: SplitScanner, k: Int) = {
 		val extractor = new KNearestNeighboursExtract(k)
-		val similarities = line.split("\t")
-		val hasElement = { (sims: AnyRef, id: Int) ⇒ sims.asInstanceOf[Array[String]].length > id + 1 }
-		val takeElement = { (sims: AnyRef, id: Int) ⇒ sims.asInstanceOf[Array[String]](id + 1) }
+		val hasElement = { (sims: AnyRef, id: Int) ⇒ sims.asInstanceOf[SplitScanner].hasNext() }
+		val takeElement = { (sims: AnyRef, id: Int) ⇒ sims.asInstanceOf[SplitScanner].takeNext() }
 		val extractSimilarity = { s: String ⇒ s.substring(s.indexOf('[') + 1, s.indexOf(',')).toDouble }
-		extractor.extractKNearestNeighbours(null, similarities, hasElement, takeElement, extractSimilarity)
+		extractor.extractKNearestNeighbours(null, scanner, hasElement, takeElement, extractSimilarity)
 	}
 
 	private def extractPredictedCategories(bestNeighbours: Array[String])(thresholdingStrategy: (Double, Tuple2[String, Double]) ⇒ Boolean) = {
