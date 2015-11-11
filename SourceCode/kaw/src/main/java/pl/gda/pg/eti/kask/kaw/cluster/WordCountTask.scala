@@ -114,7 +114,7 @@ class IntSumReducer extends Reducer[Text, Text, Text, Text] {
 		if (keyString.contains("\\\\:Cat")) {
 			val title = keyString.replace("\\\\:Cat", "")
 			val allCategories = values.foldLeft[String]("") { (all, current) ⇒ all + "\t" + current.toString }
-			val fullValue = "::Cat" + allCategories
+			val fullValue = CATEGORIES_ON_CLUSTER + allCategories
 			context.write(new Text(title), new Text(fullValue))
 		}
 		else {

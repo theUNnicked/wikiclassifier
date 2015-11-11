@@ -76,7 +76,7 @@ class WordCountReader extends Mapper[Object, Text, Text, PairWritable] {
 
 	override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, PairWritable]#Context): Unit = {
 		val parts = value.toString.split("\t")
-		if (parts(1).equals("::Cat")) {
+		if (parts(1).equals(CATEGORIES_ON_CLUSTER)) {
 			var i = 2
 			while (i < parts.length) {
 				context.write(new Text(parts(0)), new PairWritable(parts(1), parts(i)))
@@ -128,7 +128,7 @@ class PairsUnpacker {
 		val categories = MutableList[String]()
 
 		values.foreach { x ⇒
-			if (x.left.equals("::Cat")) {
+			if (x.left.equals(CATEGORIES_ON_CLUSTER)) {
 				categories += x.right
 			}
 			else {
@@ -158,7 +158,7 @@ class NewArticleUnpacker(private val outputDir: String, private val conf: Config
 				while (scanner.hasNextLine()) {
 					val value = scanner.nextLine()
 					val parts = value.toString.split("\t")
-					if (!parts(1).equals("::Cat")) {
+					if (!parts(1).equals(CATEGORIES_ON_CLUSTER)) {
 						words += new Word(parts(1), parts(2).toInt)
 					}
 

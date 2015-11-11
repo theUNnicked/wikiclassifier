@@ -19,6 +19,7 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat
 import java.io.IOException
 import scala.util.Random
+import scala.math.abs
 
 class FoldingClusterTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
@@ -33,7 +34,7 @@ class FoldingClusterTask extends ClusterTask {
 
 		val folds = conf.getInt("pl.gda.pg.eti.kask.kaw.folds", 10)
 		var i = 0;
-		for (i ← 0 to folds) {
+		for (i ← 0 to (folds - 1)) {
 			MultipleOutputs.addNamedOutput(job, "set" + i.toString, classOf[TextOutputFormat[Text, Text]], classOf[Text], classOf[Text])
 		}
 		FileOutputFormat.setOutputPath(job, new Path(args(1)))
@@ -56,9 +57,23 @@ class FoldingReducer extends Reducer[Text, PairWritable, Text, Text] {
 	}
 
 	override def reduce(key: Text, values: java.lang.Iterable[PairWritable], context: Reducer[Text, PairWritable, Text, Text]#Context): Unit = {
-		val ran = new Random().nextInt(folds * randomPerFold)
+	  if(key == null || key.toString.isEmpty) {
+	    return
+	  }
+		val ran = abs(key.toString.hashCode) % (folds * randomPerFold)
 		val setNumber = (ran / randomPerFold).toInt
-		mos.write("set" + setNumber.toString, key, new Text(packToString(values)));
+		
+		// TODO: do naprawienia:
+		if(!values.exists { x => x.left.equals(CATEGORIES_ON_CLUSTER) }) {
+		  return
+		}
+		values.foreach { x =>
+		  mos.write("set" + setNumber.toString, key, new Text(x.left + "\t" + x.right));
+		}
+	}
+	
+	override protected def cleanup(context: Reducer[Text, PairWritable, Text, Text]#Context) {
+	  mos.close()
 	}
 
 	private def packToString(values: java.lang.Iterable[PairWritable]): String = {
