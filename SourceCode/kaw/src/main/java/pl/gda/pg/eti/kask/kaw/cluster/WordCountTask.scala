@@ -113,9 +113,10 @@ class IntSumReducer extends Reducer[Text, Text, Text, Text] {
 		var keyString = key.toString
 		if (keyString.contains("\\\\:Cat")) {
 			val title = keyString.replace("\\\\:Cat", "")
-			val allCategories = values.foldLeft[String]("") { (all, current) ⇒ all + "\t" + current.toString }
-			val fullValue = CATEGORIES_ON_CLUSTER + allCategories
-			context.write(new Text(title), new Text(fullValue))
+			values.foreach { x => 
+			  val fullValue = CATEGORIES_ON_CLUSTER + "\t" + x
+			  context.write(new Text(title), new Text(fullValue))
+			}
 		}
 		else {
 			val sum = values.foldLeft(0) { (sum, v) ⇒ sum + v.toString.toInt }

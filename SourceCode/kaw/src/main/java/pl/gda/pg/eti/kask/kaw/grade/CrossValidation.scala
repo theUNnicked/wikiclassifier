@@ -17,35 +17,42 @@ class CrossValidation {
 
 	def validate(outputDir: String, hdfs: FileSystem, k: Int)(thresholdingStrategy: (Double, Tuple2[String, Double]) ⇒ Boolean) = {
 		val resultsMap = scala.collection.mutable.Map[String, Double]()
-		val files = hdfs.listStatus(new Path(outputDir));
+		val dirs = hdfs.listStatus(new Path(outputDir))
 		var i = 0
-
-		for (i ← 0 to files.length - 1) {
-			if (!files(i).getPath.toString.contains(".crc")) {
-				val file = hdfs.open(files(i).getPath)
-				val scanner = new SplitScanner(file)
-				while (scanner.hasNextLine()) {
-				  scanner.takeNextLine()
-					val line = scanner.takeNext()
-					val articleName = scanner.takeNext()
-					val expectedCategories = extractExpectedCategories(line)
-					val articles = extractKBestArticles(scanner, k)
-					val predictedCategories = extractPredictedCategories(articles)(thresholdingStrategy)
-					if (resultsMap.contains(articleName)) {
-						resultsMap(articleName) = (resultsMap(articleName) + compare(expectedCategories, predictedCategories)) / 2.0
-					}
-					else {
-						resultsMap += articleName -> compare(expectedCategories, predictedCategories)
-					}
-				}
-				file.close()
-			}
+		for (i <- 0 to dirs.length - 1) {
+		  val files = hdfs.listStatus(dirs(i).getPath)
+  		for (i ← 0 to files.length - 1) {
+  			if (!files(i).getPath.toString.contains(".crc")) {
+  				val file = hdfs.open(files(i).getPath)
+  				val scanner = new SplitScanner(file)
+  				while (scanner.hasNextLine()) {
+  				  scanner.takeNextLine()
+  					val line = scanner.takeNext()
+  					val articleName = scanner.takeNext()
+  					val expectedCategories = extractExpectedCategories(line)
+  					val articles = extractKBestArticles(scanner, k)
+  					val predictedCategories = extractPredictedCategories(articles)(thresholdingStrategy)
+  					if (resultsMap.contains(articleName)) {
+  						resultsMap(articleName) = (resultsMap(articleName) + compare(expectedCategories, predictedCategories)) / 2.0
+  					}
+  					else {
+  						resultsMap += articleName -> compare(expectedCategories, predictedCategories)
+  					}
+  				}
+  				file.close()
+  			}
+  		}
 		}
 		resultsMap
 	}
 
 	private def extractExpectedCategories(line: String) = {
+	  if(line!= null && !line.isEmpty) {
 		line.substring(line.indexOf('[') + 1, line.indexOf(']')).split("\t").toList
+	  }
+	  else {
+	    List[String]()
+	  }
 	}
 
 	private def extractKBestArticles(scanner: SplitScanner, k: Int) = {

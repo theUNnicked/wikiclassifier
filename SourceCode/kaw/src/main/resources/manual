@@ -22,6 +22,10 @@ options:
 	
 	--crossvalidation in out: performs Apache Hadoop task for cross validation
 	
+	--cvscores in out
+	
+	--cvaverage in out
+	
 params:
 	
 	in: input folder for Apache Hadoop task

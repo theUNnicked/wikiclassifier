@@ -14,3 +14,8 @@ newArticleInput/
 newArticleOutput/
 wordCountInput/
 wordCountOutput/
+crossValRes/
+crossValCnt/
+cvScoresOutput/
+cvAverageOutput/
+crossvalidationOutput/

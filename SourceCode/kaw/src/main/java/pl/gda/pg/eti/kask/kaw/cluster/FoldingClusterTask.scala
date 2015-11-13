@@ -23,21 +23,23 @@ import scala.math.abs
 
 class FoldingClusterTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
-		val job = Job.getInstance(conf, "Folding task");
+		val job = Job.getInstance(conf, "Folding task")
+		FileInputFormat.addInputPath(job, new Path(args(0)))
+		FileOutputFormat.setOutputPath(job, new Path(args(1)))
 		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 		job.setMapperClass(classOf[WordCountReader])
 		job.setReducerClass(classOf[FoldingReducer])
 		job.setMapOutputValueClass(classOf[PairWritable])
 		job.setOutputKeyClass(classOf[Text])
 		job.setOutputValueClass(classOf[Text])
-		FileInputFormat.addInputPath(job, new Path(args(0)))
+		job.setOutputFormatClass(classOf[TextOutputFormat[Text, Text]])
 
 		val folds = conf.getInt("pl.gda.pg.eti.kask.kaw.folds", 10)
 		var i = 0;
 		for (i ← 0 to (folds - 1)) {
 			MultipleOutputs.addNamedOutput(job, "set" + i.toString, classOf[TextOutputFormat[Text, Text]], classOf[Text], classOf[Text])
 		}
-		FileOutputFormat.setOutputPath(job, new Path(args(1)))
+
 		if (job.waitForCompletion(true)) 0 else 1
 	}
 }
@@ -57,23 +59,23 @@ class FoldingReducer extends Reducer[Text, PairWritable, Text, Text] {
 	}
 
 	override def reduce(key: Text, values: java.lang.Iterable[PairWritable], context: Reducer[Text, PairWritable, Text, Text]#Context): Unit = {
-	  if(key == null || key.toString.isEmpty) {
-	    return
-	  }
+		if (key == null || key.toString.isEmpty) {
+			return
+		}
 		val ran = abs(key.toString.hashCode) % (folds * randomPerFold)
 		val setNumber = (ran / randomPerFold).toInt
-		
+
 		// TODO: do naprawienia:
-		if(!values.exists { x => x.left.equals(CATEGORIES_ON_CLUSTER) }) {
-		  return
-		}
+		//		if(!values.exists { x => x.left.equals(CATEGORIES_ON_CLUSTER) }) {
+		//		  return
+		//		}
 		values.foreach { x =>
-		  mos.write("set" + setNumber.toString, key, new Text(x.left + "\t" + x.right));
+			mos.write("set" + setNumber.toString, key, new Text(x.left + "\t" + x.right));
 		}
 	}
-	
+
 	override protected def cleanup(context: Reducer[Text, PairWritable, Text, Text]#Context) {
-	  mos.close()
+		mos.close()
 	}
 
 	private def packToString(values: java.lang.Iterable[PairWritable]): String = {
@@ -81,8 +83,7 @@ class FoldingReducer extends Reducer[Text, PairWritable, Text, Text] {
 		values.foreach { x ⇒
 			if (result == "") {
 				result = result + x.left + "\t" + x.right
-			}
-			else {
+			} else {
 				result = result + "\t" + x.left + "\t" + x.right
 			}
 		}

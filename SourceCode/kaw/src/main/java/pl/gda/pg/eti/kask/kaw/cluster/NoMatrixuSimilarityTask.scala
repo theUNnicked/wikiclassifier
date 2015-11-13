@@ -76,16 +76,7 @@ class WordCountReader extends Mapper[Object, Text, Text, PairWritable] {
 
 	override def map(key: Object, value: Text, context: Mapper[Object, Text, Text, PairWritable]#Context): Unit = {
 		val parts = value.toString.split("\t")
-		if (parts(1).equals(CATEGORIES_ON_CLUSTER)) {
-			var i = 2
-			while (i < parts.length) {
-				context.write(new Text(parts(0)), new PairWritable(parts(1), parts(i)))
-				i = i + 1
-			}
-		}
-		else {
-			context.write(new Text(parts(0)), new PairWritable(parts(1), parts(2)))
-		}
+		context.write(new Text(parts(0)), new PairWritable(parts(1), parts(2)))
 	}
 }
 

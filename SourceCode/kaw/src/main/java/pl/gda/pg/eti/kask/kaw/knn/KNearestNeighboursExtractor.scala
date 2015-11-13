@@ -9,7 +9,7 @@ class KNearestNeighboursExtract(private val k: Int) {
 		  best = Array.fill(k) { "" }
 		}
 		else {
-		  min = findMinimumWithIndex(best)
+		  min = findMinimumWithIndex(best, extractSimilarity)
 		}
 	  
 		var lastIndex = 0
@@ -18,17 +18,17 @@ class KNearestNeighboursExtract(private val k: Int) {
 			val similarity = extractSimilarity(nextLine)
 			if (similarity > min._2) {
 				best(min._1) = nextLine
-				min = findMinimumWithIndex(best)
+				min = findMinimumWithIndex(best, extractSimilarity)
 			}
 			lastIndex += 1
 		}
 		best
 	}
 
-	private def findMinimumWithIndex(best: Array[String]): Tuple2[Int, Double] = {
+	private def findMinimumWithIndex(best: Array[String], extractSimilarity: (String ⇒ Double)): Tuple2[Int, Double] = {
 		best.zipWithIndex.foldLeft[Tuple2[Int, Double]]((0, Integer.MAX_VALUE)) { (last, x) ⇒
 			if (!x._1.isEmpty) {
-				val sim = x._1.split("\t")(1).toDouble
+				val sim = extractSimilarity(x._1)
 				if (sim < last._2) (x._2, sim) else last
 			}
 			else {
