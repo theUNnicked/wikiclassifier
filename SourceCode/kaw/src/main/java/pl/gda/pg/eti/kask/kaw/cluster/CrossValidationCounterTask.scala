@@ -53,6 +53,6 @@ class CVACounterReducer extends Reducer[Text, DoubleWritable, Text, DoubleWritab
 		val avg = sum._1 / sum._2
 		val doubleWritable = new DoubleWritable
 		doubleWritable.set(avg)
-		context.write(new Text("average"), doubleWritable)
+		context.write(new Text("Average score:"), doubleWritable)
 	}
 }

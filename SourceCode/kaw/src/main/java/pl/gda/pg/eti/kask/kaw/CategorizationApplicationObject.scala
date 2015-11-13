@@ -109,24 +109,25 @@ object CategorizationApplicationObject {
 
 					if (args(0).equals("--auto")) {
 						if (args(1).equals("--classify")) {
+							val hdfs = FileSystem.get(conf)
 							// word count on new article
-							val naWcIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleInput")
-							val naWcOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleOutput")
-							new WordCountTask().runTask(conf, Array[String](naWcIn, naWcOut))
+							if(!hdfs.exists(new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleOutput"))))
+								queueTask(conf, new WordCountTask, "pl.gda.pg.eti.kask.kaw.newArticleInput", "pl.gda.pg.eti.kask.kaw.newArticleOutput")
 
 							// word count on other articles
-							val wcIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountInput")
-							val wcOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput")
-							new WordCountTask().runTask(conf, Array[String](wcIn, wcOut))
+							if(!hdfs.exists(new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput"))))
+								queueTask(conf, new WordCountTask, "pl.gda.pg.eti.kask.kaw.wordCountInput", "pl.gda.pg.eti.kask.kaw.wordCountOutput")
 
+							// dispose dictionary
 							CategorizationApplicationObject.logger.debug("Usuwanie slownika odmian")
 							TokenizerMapper.disposeDictionary
 							CategorizationApplicationObject.logger.debug("Usunieto, zwalnianie pamieci przez garbage collector..")
 
 							// similarity on all article
-							val kIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierInput")
-							val kOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
-							new NoMatrixuSimilarityTask().runTask(conf, Array[String](kIn, kOut))
+							val cfOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput"))
+							if(hdfs.exists(cfOutputPath)) 
+								hdfs.delete(cfOutputPath, true)
+							queueTask(conf, new NoMatrixuSimilarityTask, "pl.gda.pg.eti.kask.kaw.classifierInput", "pl.gda.pg.eti.kask.kaw.classifierOutput")
 
 							// best results
 							val bIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
@@ -135,27 +136,42 @@ object CategorizationApplicationObject {
 							new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent).foreach { x ⇒ println(x) }
 							return null
 						} else if (args(1).equals("--crossvalidation")) {
+							val hdfs = FileSystem.get(conf)
 							// word count on articles
-							val wcIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountInput")
-							val wcOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput")
-							new WordCountTask().runTask(conf, Array[String](wcIn, wcOut))
+							if(!hdfs.exists(new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput"))))
+								queueTask(conf, new WordCountTask, "pl.gda.pg.eti.kask.kaw.wordCountInput", "pl.gda.pg.eti.kask.kaw.wordCountOutput")
 
+							// dispose dictionary
 							CategorizationApplicationObject.logger.debug("Usuwanie slownika odmian")
 							TokenizerMapper.disposeDictionary
 							CategorizationApplicationObject.logger.debug("Usunieto, zwalnianie pamieci przez garbage collector..")
 
 							// folding on articles
-							val fIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingInput")
-							val fOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingOutput")
-							new FoldingClusterTask().runTask(conf, Array[String](fIn, fOut))
+							val foldOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingOutput"))
+							if(hdfs.exists(foldOutputPath)) 
+								hdfs.delete(foldOutputPath, true)
+							queueTask(conf, new FoldingClusterTask, "pl.gda.pg.eti.kask.kaw.foldingInput", "pl.gda.pg.eti.kask.kaw.foldingOutput")
 
 							// cross validate articles
-							val cvIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationInput")
-							val cvOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
-							new WordCountTask().runTask(conf, Array[String](cvIn, cvOut))
+							val cvOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationOutput"))
+							if(hdfs.exists(cvOutputPath)) 
+								hdfs.delete(cvOutputPath, true)
+							queueTask(conf, new CrossValidationTask, "pl.gda.pg.eti.kask.kaw.crossvalidationInput", "pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
+
+							// scores
+							val cvsOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput"))
+							if(hdfs.exists(cvsOutputPath)) 
+								hdfs.delete(cvsOutputPath, true)
+							queueTask(conf, new CrossValidationResultsTask, "pl.gda.pg.eti.kask.kaw.crossvalidationScoresInput", "pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput")
+
+							// scores
+							val cvaOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput"))
+							if(hdfs.exists(cvaOutputPath)) 
+								hdfs.delete(cvaOutputPath, true)
+							queueTask(conf, new CrossValidationAverageCounterTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
 
 							// read results
-							// TODO
+							printDirContents(hdfs, cvaOutputPath)
 						}
 					}
 
@@ -213,7 +229,7 @@ object CategorizationApplicationObject {
 					attachTask("--classify", conf, args, new NoMatrixuSimilarityTask, "pl.gda.pg.eti.kask.kaw.classifierInput", "pl.gda.pg.eti.kask.kaw.classifierOutput")
 					attachTask("--fold", conf, args, new FoldingClusterTask, "pl.gda.pg.eti.kask.kaw.foldingInput", "pl.gda.pg.eti.kask.kaw.foldingOutput")
 					attachTask("--crossvalidation", conf, args, new CrossValidationTask, "pl.gda.pg.eti.kask.kaw.crossvalidationInput", "pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
-					attachTask("--cvaverage", conf, args, new WordCountTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
+					attachTask("--cvaverage", conf, args, new CrossValidationAverageCounterTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
 					attachTask("--cvscores", conf, args, new CrossValidationResultsTask, "pl.gda.pg.eti.kask.kaw.crossvalidationScoresInput", "pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput")
 
 					return null
@@ -225,6 +241,12 @@ object CategorizationApplicationObject {
 				println(wue.getMessage); printManual
 			case e: Exception ⇒ e.printStackTrace
 		}
+	}
+	
+	private def queueTask(conf: Configuration, task: ClusterTask, inProperty: String, outProperty: String) = {
+		val inputDir = properties.getProperty(inProperty)
+		val outputDir = properties.getProperty(outProperty)
+		task.runTask(conf, Array[String](inputDir, outputDir))
 	}
 
 	private def attachTask(cmd: String, conf: Configuration, args: Array[String], task: ClusterTask, inProperty: String, outProperty: String) = {
@@ -247,6 +269,19 @@ object CategorizationApplicationObject {
 		val sc = new Scanner(classOf[CategorizationApplicationObject].getResourceAsStream("/manual"), "UTF-8")
 		while (sc.hasNextLine()) {
 			println(sc.nextLine())
+		}
+	}
+	
+	private def printDirContents(hdfs: FileSystem, dir: Path) {
+		val stat = hdfs.listStatus(dir)
+		stat.foreach { stat =>
+			val file = hdfs.open(stat.getPath)
+			val scanner = new Scanner(file, "UTF-8")
+			while(scanner.hasNextLine) {
+				val line = scanner.nextLine
+				if(line != null && !line.isEmpty)
+					println(line)
+			}
 		}
 	}
 }
