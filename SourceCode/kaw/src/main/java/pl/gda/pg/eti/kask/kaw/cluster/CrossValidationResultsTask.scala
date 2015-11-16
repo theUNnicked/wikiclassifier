@@ -23,7 +23,7 @@ class CrossValidationResultsTask extends ClusterTask {
 		val hdfs = FileSystem.get(conf)
 		val stat = hdfs.listStatus(new Path(args(0)))
 
-		val job = Job.getInstance(conf, "Cross Validation results interpreter task");
+		val job = Job.getInstance(conf, "Cross Validation score counter task");
 		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 		job.setMapperClass(classOf[CrossValidationResultsMapper])
 		job.setReducerClass(classOf[CrossValidationResultsReducer])

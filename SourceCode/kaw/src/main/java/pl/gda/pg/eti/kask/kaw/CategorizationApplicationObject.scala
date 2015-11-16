@@ -23,6 +23,7 @@ import pl.gda.pg.eti.kask.kaw.cluster.TokenizerMapper
 import pl.gda.pg.eti.kask.kaw.cluster.CrossValidationResultsTask
 import pl.gda.pg.eti.kask.kaw.cluster.CrossValidationAverageCounterTask
 import pl.gda.pg.eti.kask.kaw.cluster.ClusterTask
+import scala.collection.JavaConversions._
 
 class WrongUsageException extends Exception("Wrong usage, check your parameters and try again");
 class InvalidPropertiesException extends Exception("Wrong parameters, check parameter file [kaw.properties]");
@@ -77,26 +78,33 @@ object CategorizationApplicationObject {
 					val conf = new Configuration
 
 					conf.set("hadoop.job.ugi", username)
-					val jobtracker = properties.getProperty("hadoop.mapred.job.tracker")
-					if (jobtracker != null) {
-						conf.set("mapred.job.tracker", jobtracker)
+					
+					properties.propertyNames().foreach { x =>
+						val xStr = x.toString()
+						if(xStr.startsWith("hadoop.")) {
+							conf.set(xStr.replace("hadoop.", ""), properties.getProperty(xStr))
+						}
 					}
-					val fs = properties.getProperty("hadoop.fs.defaultFS")
-					if (fs != null) {
-						conf.set("fs.defaultFS", fs)
-					}
-					val mrFramework = properties.getProperty("hadoop.mapreduce.framework.name")
-					if (mrFramework != null) {
-						conf.set("mapreduce.framework.name", mrFramework);
-					}
-					val rmAddress = properties.getProperty("hadoop.yarn.resourcemanager.address")
-					if (rmAddress != null) {
-						conf.set("yarn.resourcemanager.address", rmAddress);
-					}
-					val rmScheduler = properties.getProperty("hadoop.yarn.resourcemanager.scheduler.address")
-					if (rmScheduler != null) {
-						conf.set("yarn.resourcemanager.scheduler.address", rmScheduler)
-					}
+//					val jobtracker = properties.getProperty("hadoop.mapred.job.tracker")
+//					if (jobtracker != null) {
+//						conf.set("mapred.job.tracker", jobtracker)
+//					}
+//					val fs = properties.getProperty("hadoop.fs.defaultFS")
+//					if (fs != null) {
+//						conf.set("fs.default.name", fs)
+//					}
+//					val mrFramework = properties.getProperty("hadoop.mapreduce.framework.name")
+//					if (mrFramework != null) {
+//						conf.set("mapreduce.framework.name", mrFramework);
+//					}
+//					val rmAddress = properties.getProperty("hadoop.yarn.resourcemanager.address")
+//					if (rmAddress != null) {
+//						conf.set("yarn.resourcemanager.address", rmAddress);
+//					}
+//					val rmScheduler = properties.getProperty("hadoop.yarn.resourcemanager.scheduler.address")
+//					if (rmScheduler != null) {
+//						conf.set("yarn.resourcemanager.scheduler.address", rmScheduler)
+//					}
 
 					conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName())
 					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
@@ -232,6 +240,7 @@ object CategorizationApplicationObject {
 					attachTask("--cvaverage", conf, args, new CrossValidationAverageCounterTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
 					attachTask("--cvscores", conf, args, new CrossValidationResultsTask, "pl.gda.pg.eti.kask.kaw.crossvalidationScoresInput", "pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput")
 
+					TokenizerMapper.disposeDictionary
 					return null
 				}
 			})

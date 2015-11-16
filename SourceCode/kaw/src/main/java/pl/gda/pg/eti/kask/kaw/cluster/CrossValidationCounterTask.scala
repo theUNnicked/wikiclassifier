@@ -15,7 +15,7 @@ import org.apache.hadoop.mapreduce.Reducer
 class CrossValidationAverageCounterTask extends ClusterTask {
 
 	def runTask(conf: Configuration, args: Array[String]): Int = {
-		val job = Job.getInstance(conf, "Cross Validation task");
+		val job = Job.getInstance(conf, "Cross Validation average score counter task");
 		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 		job.setMapperClass(classOf[CVACounterMapper])
 		job.setCombinerClass(classOf[CVACounterReducer])

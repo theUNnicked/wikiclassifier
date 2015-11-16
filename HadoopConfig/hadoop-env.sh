@@ -21,6 +21,14 @@
 # set JAVA_HOME in this file, so that it is correctly defined on
 # remote nodes.
 
+# Opts 1
+#export HADOOP_OPTS="-Xmx2g"
+#export HADOOP_DATANODE_OPTS="-Xmx2g"
+
+# Opts 2
+export HADOOP_HEAPSIZE=4096
+export HADOOP_PREFIX=/macierz/home/143365sk/KAW/hadoop-2.6.1
+
 # The java implementation to use.
 export JAVA_HOME=${JAVA_HOME}
 
@@ -88,7 +96,7 @@ export HADOOP_SECURE_DN_LOG_DIR=${HADOOP_LOG_DIR}/${HADOOP_HDFS_USER}
 ###
 
 # The directory where pid files are stored. /tmp by default.
-# NOTE: this should be set to a directory that can only be written to by 
+# NOTE: this should be set to a directory that can only be written to by
 #       the user that will run the hadoop daemons.  Otherwise there is the
 #       potential for a symlink attack.
 export HADOOP_PID_DIR=${HADOOP_PID_DIR}
