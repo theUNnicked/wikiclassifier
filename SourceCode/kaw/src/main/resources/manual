@@ -1,37 +1,44 @@
-Usage:
-kaw.jar [options] [params]
+NAME
+	KAW - Kategoryzacja Artykulow Wikipedii
+	
+SYNOPSIS
+	kaw.jar [task] [params]
 
-options:
-	--dump dumpIn out: reads wikidumps *pages-articles*.xml file and puts articles in folder on cluster
+DESCRIPTIONS
+	Program do automatycznej kategoryzacji nowych artykulow wikipedii, w oparciu o klaster Apache Hadoop.
 	
-	--dump --local dumpIn out: reads wikidumps *pages-articles*.xml file and puts articles in folder on local pc
+	dump [--local] DUMP_IN OUT_DIR [--start START [--skip SKIP]] [--max MAX]
+		reads wikidumps DUMP_IN=*pages-articles*.xml file and puts articles in OUT_DIR directory on cluster. If
+		--local flag supplied, program will put articles in OUT_DIR of local filesystem. When start parameter
+		supplied, program will start from START'th article. When skip parameter supplied program will skip articles
+		from second article to SKIP article and so on. When max parameter supplied, program will stop when reached
+		MAX'th article.
 	
-	--best in k: finds best categories for article with SS-cut strategy for best 70 percent
+	bestCategories IN_DIR K
+		finds best categories with SS-cut strategy from IN_DIR which should be output directory of kNN classifier
+		with supplied K.
 	
-	--best --70p in k: finds best categories for article with SS-cut strategy for best 70 percent
+	wordcount IN_DIR OUT_DIR
+		performs Apache Hadoop task for counting words, IN_DIR is a directory with articles in wikicode, results
+		are put into OUT_DIR.
 	
-	--crosvalresults in k: shows results of cross validation with SS-cut strategy for best 70 percent
+	classify [--auto] IN_DIR OUT_DIR
+		performs Apache Hadoop task for classifing single article, IN_DIR should be output directory of
+		word count task, results are put into OUT_DIR.
 	
-	--crosvalresults --70p in k: shows results of cross validation with SS-cut strategy for best 70 percent
+	fold IN_DIR OUT_DIR
+		performs Apache Hadoop task for folding, IN_DIR should be output directory of word count task,
+		results are put into OUT_DIR.
 	
-	--wordcount in out: performs Apache Hadoop task for counting words
+	crossvalidate [--auto] IN_DIR OUT_DIR
+		performs Apache Hadoop task for cross validation, IN_DIR should be output directory of folding task,
+		results are put into OUT_DIR, when --auto flag supplied, folding, crossvalidation and score counting
+		and word counting (if necessary) is performed automatically.
 	
-	--classify in out: performs Apache Hadoop task for classifing single article
+	cvscores IN_DIR OUT_DIR
+		counts scores for crossvalidation, IN_DIR should be crossvalidation output directory, results are
+		put into OUT_DIR.
 	
-	--fold in out: performs Apache Hadoop task for folding
-	
-	--crossvalidation in out: performs Apache Hadoop task for cross validation
-	
-	--cvscores in out
-	
-	--cvaverage in out
-	
-params:
-	
-	in: input folder for Apache Hadoop task
-	
-	out: output folder for Apache Hadoop task
-	
-	dumpIn: input *pages-articles*.xml file from Wikipedia dumps
-	
-	k: how many nearest neighbours to take
+	cvaverage in out
+		counts average score for crossvalidation, IN_DIR should be cv scores output directory, results are
+		put into OUT_DIR.
