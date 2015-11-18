@@ -1,4 +1,4 @@
-export READ_DUMP_MAX_ARTICLES=10000
+export READ_DUMP_MAX_ARTICLES=500
 export READ_DUMP_USER_LOGIN=143351sw
 export READ_FOLDER=~/KAW/wikiclassifier/SourceCode/kaw
 export READ_DUMP_JAR_PLACEMENT=~/KAW/wikiclassifier/SourceCode/kaw/target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar
