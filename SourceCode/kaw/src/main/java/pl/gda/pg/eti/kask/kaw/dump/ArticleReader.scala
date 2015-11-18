@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 
-class ArticleReader(private val xmlFile: String, private val outputFolder: String, private val start: Int, private val skip: Int, private val max: Int) {
+class ArticleReader(private val xmlFile: String, private val outputFolder: String, private val start: Int, private val skip: Int, private val max: Int, private val dropDir: Boolean) {
 
 	def readAndUpload() {
 		try {
@@ -24,7 +24,7 @@ class ArticleReader(private val xmlFile: String, private val outputFolder: Strin
 
 			ArticleReader.logger.debug("Tworzenie lokalnego folderu {}", outputFolder)
 			var file = new File(outputFolder)
-			if (file.exists()) {
+			if (file.exists() && dropDir) {
 				if (file.isDirectory) {
 					ArticleReader.logger.debug("Folder {} istnieje, usuwam z zawartoscia", outputFolder)
 					FileUtils.deleteDirectory(file)
@@ -140,7 +140,7 @@ class ArticleWikiHandler(private val outputFolder: String, private val start: In
 
 }
 
-class DistributedArticleReader(private val xmlFile: String, private val outputFolder: String, private val hdfs: FileSystem, private val start: Int, private val skip: Int, private val max: Int) {
+class DistributedArticleReader(private val xmlFile: String, private val outputFolder: String, private val hdfs: FileSystem, private val start: Int, private val skip: Int, private val max: Int, private val dropDir: Boolean) {
 
 	def readAndUpload() {
 		try {
@@ -149,7 +149,7 @@ class DistributedArticleReader(private val xmlFile: String, private val outputFo
 
 			DistributedArticleReader.logger.debug("Tworzenie lokalnego folderu {}", outputFolder)
 			var file = new Path(outputFolder)
-			if (hdfs.exists(file)) {
+			if (hdfs.exists(file) && dropDir) {
 				if (hdfs.isDirectory(file)) {
 					DistributedArticleReader.logger.debug("Folder {} istnieje, usuwam z zawartoscia", outputFolder)
 					hdfs.delete(file, true)

@@ -62,16 +62,17 @@ object CategorizationApplicationObject {
 					val skipArgs = extractParametersAfterString("--skip", args, 1)
 					val maxArgs = extractParametersAfterString("--max", args, 1)
 					val startArgs = extractParametersAfterString("--start", args, 1)
+					val dropDir = args.contains("--push")
 					val skip = if (skipArgs == null) -1 else skipArgs(0).toInt
 					val max = if (maxArgs == null) -1 else maxArgs(0).toInt
 					val start = if (startArgs == null) -1 else startArgs(0).toInt
 					if(mainArgs == null) {
 						val dumpIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.localDumpsInput")
 						val dumpOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.dumpsOutput")
-						new ArticleReader(dumpIn, dumpOut, start, skip, max).readAndUpload();
+						new ArticleReader(dumpIn, dumpOut, start, skip, max, dropDir).readAndUpload();
 					}
 					else {
-						new ArticleReader(mainArgs(0), mainArgs(1), start, skip, max).readAndUpload();
+						new ArticleReader(mainArgs(0), mainArgs(1), start, skip, max, dropDir).readAndUpload();
 					}
 					return
 				}
@@ -207,16 +208,17 @@ object CategorizationApplicationObject {
 						val skipArgs = extractParametersAfterString("--skip", args, 1)
 						val maxArgs = extractParametersAfterString("--max", args, 1)
 						val startArgs = extractParametersAfterString("--start", args, 1)
+						val dropDir = args.contains("--push")
 						val skip = if (skipArgs == null) -1 else skipArgs(0).toInt
 						val max = if (maxArgs == null) -1 else maxArgs(0).toInt
 						val start = if (startArgs == null) -1 else startArgs(0).toInt
 						if(mainArgs == null) {
 							val dumpIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.localDumpsInput")
 							val dumpOut = properties.getProperty("pl.gda.pg.eti.kask.kaw.dumpsOutput")
-							new DistributedArticleReader(dumpIn, dumpOut, hdfs, start, skip, max).readAndUpload();
+							new DistributedArticleReader(dumpIn, dumpOut, hdfs, start, skip, max, dropDir).readAndUpload();
 						}
 						else {
-							new DistributedArticleReader(mainArgs(0), mainArgs(1), hdfs, start, skip, max).readAndUpload();
+							new DistributedArticleReader(mainArgs(0), mainArgs(1), hdfs, start, skip, max, dropDir).readAndUpload();
 						}
 						logger.debug("Zamykam system plikow")
 						hdfs.close
