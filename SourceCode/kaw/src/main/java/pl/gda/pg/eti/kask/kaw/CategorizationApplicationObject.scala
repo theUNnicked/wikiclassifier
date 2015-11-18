@@ -195,10 +195,6 @@ object CategorizationApplicationObject {
 						return null
 					}
 
-					if (args.length > 3) {
-						throw new WrongUsageException
-					}
-
 					if (args(0).equals("dump")) {
 						logger.debug("Pobieram system plikow z konfiguracji")
 						val hdfs = FileSystem.get(conf)
