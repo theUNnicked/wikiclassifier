@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
+@Deprecated
 public class DictionaryTree implements Serializable {
 
 	private static final long serialVersionUID = -1778581097720228638L;

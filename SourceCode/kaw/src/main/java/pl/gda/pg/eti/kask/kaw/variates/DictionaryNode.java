@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class DictionaryNode implements Serializable{
 	
 	private static final long serialVersionUID = -1335933171986936438L;

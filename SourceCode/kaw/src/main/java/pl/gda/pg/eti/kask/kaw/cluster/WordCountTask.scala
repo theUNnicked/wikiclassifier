@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.commons.io.FilenameUtils
 import org.slf4j.LoggerFactory
 import org.apache.hadoop.fs.FileSystem
-import pl.gda.pg.eti.kask.kaw.variates.DictionaryTree
+import pl.gda.pg.eti.kask.kaw.variates.Dictionary
 
 class WordCountTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
@@ -34,15 +34,15 @@ class WordCountTask extends ClusterTask {
 
 object TokenizerMapper {
 	private val logger = LoggerFactory.getLogger(classOf[TokenizerMapper])
-	private var dictionary: DictionaryTree = null
+	private var dictionary: Dictionary = null
 
 	def findLexem(word: String, configuration: Configuration) = {
 		if (dictionary == null) {
 			val hdfs = FileSystem.get(configuration)
-			dictionary = new DictionaryTree()
-			dictionary.deserializeFromFile(hdfs.open(new Path(configuration.get("pl.gda.pg.eti.kask.kaw.dictionaryLocation"))))
+			dictionary = new Dictionary()
+			dictionary.loadDictionary(hdfs.open(new Path(configuration.get("pl.gda.pg.eti.kask.kaw.dictionaryLocation"))))
 		}
-		dictionary.getWordLexem(word)
+		dictionary.getWordLexeme(word)
 	}
 	
 	def disposeDictionary {
