@@ -21,6 +21,10 @@ limitations under the License. See accompanying LICENSE file.
     <name>dfs.replication</name>
     <value>2</value>
   </property>
+  <property>
+    <name>dfs.secondary.http.address</name>
+    <value>des08.eti.pg.gda.pl:50090</value>
+  </property>
   <!--
   <property>
     <name>dfs.datanode.data.dir</name>
