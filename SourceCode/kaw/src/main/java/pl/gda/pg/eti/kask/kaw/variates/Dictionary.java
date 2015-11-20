@@ -2,7 +2,6 @@ package pl.gda.pg.eti.kask.kaw.variates;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,15 +12,16 @@ public class Dictionary {
 	private HashMap<Character, Node> roots = new HashMap<Character, Node>();
 
 	public String getWordLexeme(String word) {
-		if (roots.containsKey(word.charAt(0))) {
+		Node node = roots.get(word.charAt(0));
+		if (node != null) {
 			if (word.length() == 1) {
-				if (roots.get(word.charAt(0)).baseWord == "") {
+				if (node.baseWord == "") {
 					return word;
 				} else {
-					return roots.get(word.charAt(0)).baseWord;
+					return node.baseWord;
 				}
 			}
-			String returnedWord = search(word.substring(1), roots.get(word.charAt(0)));
+			String returnedWord = search(word.substring(1), node);
 			if (returnedWord != "") {
 				return returnedWord;
 			}
@@ -53,10 +53,8 @@ public class Dictionary {
 	}
 
 	private void insert(String word, Node insertNode, String wordToInsert) {
-		final Node nextChild;
-		if (insertNode.leaves.containsKey(word.charAt(0))) {
-			nextChild = insertNode.leaves.get(word.charAt(0));
-		} else {
+		Node nextChild = insertNode.leaves.get(word.charAt(0));
+		if(nextChild == null) {
 			nextChild = new Node();
 			insertNode.leaves.put(word.charAt(0), nextChild);
 		}
