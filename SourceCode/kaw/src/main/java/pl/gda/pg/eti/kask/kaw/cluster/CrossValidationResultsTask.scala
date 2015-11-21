@@ -23,7 +23,7 @@ class CrossValidationResultsTask extends ClusterTask {
 		val hdfs = FileSystem.get(conf)
 		val stat = hdfs.listStatus(new Path(args(0)))
 
-		val job = Job.getInstance(conf, "Cross Validation score counter task");
+		val job = Job.getInstance(conf, "Cross Validation score counter task")
 		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 		job.setMapperClass(classOf[CrossValidationResultsMapper])
 		job.setReducerClass(classOf[CrossValidationResultsReducer])
@@ -57,14 +57,22 @@ class CrossValidationResultsMapper extends Mapper[Object, Text, Text, Text] {
 
 class CrossValidationResultsReducer extends Reducer[Text, Text, Text, DoubleWritable] {
 	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, Text, Text, DoubleWritable]#Context) {
-		val expectedCategories = extractExpectedCategories(values.head.toString)
+		val vhead = values.head.toString
+		val expectedCategories = extractExpectedCategories(vhead)
 		val k = context.getConfiguration.getInt("pl.gda.pg.eti.kask.kaw.kNeighbours", 15)
 		val neighbours = extractBestKNeighbours(k, values)
-		val categories = extractPredictedCategories(neighbours)
-
-		val value = new DoubleWritable
-		value.set(compare(expectedCategories, categories))
-		context.write(key, value)
+		try {
+			val categories = extractPredictedCategories(neighbours)
+			val value = new DoubleWritable
+			value.set(compare(expectedCategories, categories))
+			context.write(key, value)
+		}
+		catch {
+			case e: Exception =>
+				println(vhead)
+				println(neighbours)
+				e.printStackTrace();
+		}
 	}
 
 	private def extractPredictedCategories(kNeighbours: Array[String]) = {
@@ -83,8 +91,13 @@ class CrossValidationResultsReducer extends Reducer[Text, Text, Text, DoubleWrit
 		val hasElement = { (iter: AnyRef, id: Int) ⇒ iter.asInstanceOf[java.util.Iterator[Text]].hasNext }
 		val takeElement = { (iter: AnyRef, id: Int) ⇒ iter.asInstanceOf[java.util.Iterator[Text]].next.toString }
 		val extractSimilarity = { s: String ⇒
-			val prediction = extractPredictionString(s)
-			prediction.substring(prediction.indexOf('[') + 1, prediction.indexOf(',')).toDouble
+			try {
+				val prediction = extractPredictionString(s)
+				prediction.substring(prediction.indexOf('[') + 1, prediction.indexOf(',')).toDouble
+			}
+			catch {
+				case e: Exception => 0.0
+			}
 		}
 		extractor.extractKNearestNeighbours(null, values.iterator, hasElement, takeElement, extractSimilarity)
 	}
