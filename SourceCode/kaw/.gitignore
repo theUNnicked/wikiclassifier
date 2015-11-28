@@ -19,3 +19,5 @@ crossValCnt/
 cvScoresOutput/
 cvAverageOutput/
 crossvalidationOutput/
+logs/
+dictionary.txt

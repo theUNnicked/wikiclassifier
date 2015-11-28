@@ -24,7 +24,7 @@ class CrossValidationResultsTask extends ClusterTask {
 		val stat = hdfs.listStatus(new Path(args(0)))
 
 		val job = Job.getInstance(conf, "Cross Validation score counter task")
-		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
+		job.setJar(conf.get("pl.gda.pg.eti.kask.kaw.jarLocation"))
 		job.setMapperClass(classOf[CrossValidationResultsMapper])
 		job.setReducerClass(classOf[CrossValidationResultsReducer])
 		job.setOutputKeyClass(classOf[Text])
@@ -55,17 +55,32 @@ class CrossValidationResultsMapper extends Mapper[Object, Text, Text, Text] {
 	}
 }
 
-class CrossValidationResultsReducer extends Reducer[Text, Text, Text, DoubleWritable] {
-	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, Text, Text, DoubleWritable]#Context) {
+class CrossValidationResultsReducer extends Reducer[Text, Text, Text, Text] {
+	override def reduce(key: Text, values: java.lang.Iterable[Text], context: Reducer[Text, Text, Text, Text]#Context) {
 		val vhead = values.head.toString
 		val expectedCategories = extractExpectedCategories(vhead)
 		val k = context.getConfiguration.getInt("pl.gda.pg.eti.kask.kaw.kNeighbours", 15)
 		val neighbours = extractBestKNeighbours(k, values)
 		try {
 			val categories = extractPredictedCategories(neighbours)
-			val value = new DoubleWritable
-			value.set(compare(expectedCategories, categories))
-			context.write(key, value)
+			// TP, FP, FN
+			val compared = compare(expectedCategories, categories)
+
+			val TP = compared._1
+			val FP = compared._2
+			val FN = compared._3
+
+			if(TP + FN == 0 || TP + FP == 0) {
+				return;
+			}
+
+			val sensitivity = TP.toDouble / (TP.toDouble + FN.toDouble)
+			val precision = TP.toDouble / (TP.toDouble + FP.toDouble)
+			val recall = sensitivity
+			val fMeasure = if(precision + recall == 0.0) 0.0 else ((2 * precision * recall) / (precision + recall))
+
+			val allValues = new Text(TP.toString + "\t" + FP.toString + "\t" + FN.toString + "\t" + sensitivity.toString + "\t" + precision.toString + "\t" + fMeasure.toString)
+			context.write(key, allValues)
 		}
 		catch {
 			case e: Exception =>
@@ -118,13 +133,26 @@ class CrossValidationResultsReducer extends Reducer[Text, Text, Text, DoubleWrit
 		}
 	}
 
-	private def compare(expectedCategories: List[String], predictedCategories: List[String]): Double = {
-		var n = 0
+	private def compare(expectedCategories: List[String], predictedCategories: List[String]): Tuple3[Int, Int, Int] = {
+		var TP = 0
+		var FP = 0
+		var FN = 0
+
 		expectedCategories.foreach { expected ⇒
 			if (predictedCategories.contains(expected)) {
-				n += 1
+				TP += 1
+			}
+			else {
+				FN += 1
 			}
 		}
-		((n.toDouble * 2) / (expectedCategories.length + predictedCategories.length))
+
+		predictedCategories.foreach { predicted =>
+			if(!expectedCategories.contains(predicted)) {
+				FP += 1
+			}
+		}
+
+		(TP, FP, FN)
 	}
 }

@@ -26,7 +26,7 @@ class FoldingClusterTask extends ClusterTask {
 		val job = Job.getInstance(conf, "Folding task")
 		FileInputFormat.addInputPath(job, new Path(args(0)))
 		FileOutputFormat.setOutputPath(job, new Path(args(1)))
-		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
+		job.setJar(conf.get("pl.gda.pg.eti.kask.kaw.jarLocation"))
 		job.setMapperClass(classOf[WordCountReader])
 		job.setReducerClass(classOf[FoldingReducer])
 		job.setMapOutputValueClass(classOf[PairWritable])

@@ -19,7 +19,7 @@ import pl.gda.pg.eti.kask.kaw.variates.Dictionary
 class WordCountTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
 		val job = Job.getInstance(conf, "Word count task");
-		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
+		job.setJar(conf.get("pl.gda.pg.eti.kask.kaw.jarLocation"))
 		//job.setJarByClass(classOf[WordCountTask])
 		job.setMapperClass(classOf[TokenizerMapper])
 		job.setCombinerClass(classOf[IntSumCombiner])
@@ -44,7 +44,7 @@ object TokenizerMapper {
 		}
 		dictionary.getWordLexeme(word)
 	}
-	
+
 	def disposeDictionary {
 	  dictionary = null
 	  System.gc()
@@ -113,7 +113,7 @@ class IntSumReducer extends Reducer[Text, Text, Text, Text] {
 		var keyString = key.toString
 		if (keyString.contains("\\\\:Cat")) {
 			val title = keyString.replace("\\\\:Cat", "")
-			values.foreach { x => 
+			values.foreach { x =>
 			  val fullValue = CATEGORIES_ON_CLUSTER + "\t" + x
 			  context.write(new Text(title), new Text(fullValue))
 			}

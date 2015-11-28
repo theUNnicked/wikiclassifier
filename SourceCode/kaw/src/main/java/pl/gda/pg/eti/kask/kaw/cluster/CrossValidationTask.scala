@@ -35,7 +35,7 @@ class CrossValidationTask extends ClusterTask {
 				conf.set("pl.gda.pg.eti.kask.kaw.crossValidationInputFolder", args(0))
 
 				val job = Job.getInstance(conf, "Cross Validation task, fold no. " + i.toString);
-				job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
+				job.setJar(conf.get("pl.gda.pg.eti.kask.kaw.jarLocation"))
 				job.setMapperClass(classOf[SetsMapper])
 				job.setReducerClass(classOf[CrossValidationReducer])
 				job.setOutputKeyClass(classOf[Text])

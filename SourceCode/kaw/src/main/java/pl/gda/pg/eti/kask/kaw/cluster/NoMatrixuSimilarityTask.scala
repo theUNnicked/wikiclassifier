@@ -23,7 +23,7 @@ import scala.collection.mutable.MutableList
 class NoMatrixuSimilarityTask extends ClusterTask {
 	override def runTask(conf: Configuration, args: Array[String]): Int = {
 		val job = Job.getInstance(conf, "kNN Similarity Task");
-		job.setJar("target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
+		job.setJar(conf.get("pl.gda.pg.eti.kask.kaw.jarLocation"))
 		//job.setJarByClass(classOf[WordCountTask])
 		job.setMapperClass(classOf[WordCountReader])
 		job.setReducerClass(classOf[KnnReducer])

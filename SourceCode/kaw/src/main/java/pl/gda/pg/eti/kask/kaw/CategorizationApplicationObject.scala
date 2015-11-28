@@ -33,8 +33,8 @@ class CategorizationApplicationObject {}
 
 object CategorizationApplicationObject {
 
-	val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if (p._2 > max * 0.9) true else false }
-	
+	val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if ((p._2 / max) > max * 0.7) true else false }
+
 	private val logger = LoggerFactory.getLogger(classOf[CategorizationApplicationObject])
 	private val properties = new Properties
 
@@ -91,13 +91,16 @@ object CategorizationApplicationObject {
 					val conf = new Configuration
 
 					conf.set("hadoop.job.ugi", username)
-					
+
 					properties.propertyNames().foreach { x =>
 						val xStr = x.toString()
 						if(xStr.startsWith("hadoop.")) {
 							conf.set(xStr.replace("hadoop.", ""), properties.getProperty(xStr))
 						}
 					}
+
+					val jarFile = properties.getProperty("pl.gda.pg.eti.kask.kaw.jarLocation")
+					conf.set("pl.gda.pg.eti.kask.kaw.jarLocation", if(jarFile == null) "target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar" else jarFile)
 
 					conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName())
 					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
@@ -108,29 +111,29 @@ object CategorizationApplicationObject {
 					conf.set("pl.gda.pg.eti.kask.kaw.dictionaryLocation", dictionaryLocation)
 					conf.set("pl.gda.pg.eti.kask.kaw.kNeighbours", properties.getProperty("pl.gda.pg.eti.kask.kaw.k"))
 
-					if (args.length == 2) { 
+					if (args.length == 2) {
 						if (args(1).equals("--auto")) {
 							if (args(0).equals("classify")) {
 								val hdfs = FileSystem.get(conf)
 								// word count on new article
 								if(!hdfs.exists(new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.newArticleOutput"))))
 									queueTask(conf, new WordCountTask, "pl.gda.pg.eti.kask.kaw.newArticleInput", "pl.gda.pg.eti.kask.kaw.newArticleOutput")
-	
+
 								// word count on other articles
 								if(!hdfs.exists(new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput"))))
 									queueTask(conf, new WordCountTask, "pl.gda.pg.eti.kask.kaw.wordCountInput", "pl.gda.pg.eti.kask.kaw.wordCountOutput")
-	
+
 								// dispose dictionary
 								CategorizationApplicationObject.logger.debug("Usuwanie slownika odmian")
 								TokenizerMapper.disposeDictionary
 								CategorizationApplicationObject.logger.debug("Usunieto, zwalnianie pamieci przez garbage collector..")
-	
+
 								// similarity on all article
 								val cfOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput"))
-								if(hdfs.exists(cfOutputPath)) 
+								if(hdfs.exists(cfOutputPath))
 									hdfs.delete(cfOutputPath, true)
 								queueTask(conf, new NoMatrixuSimilarityTask, "pl.gda.pg.eti.kask.kaw.classifierInput", "pl.gda.pg.eti.kask.kaw.classifierOutput")
-	
+
 								// best results
 								val bIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
 								val bK = properties.getProperty("pl.gda.pg.eti.kask.kaw.k")
@@ -144,36 +147,36 @@ object CategorizationApplicationObject {
 								// word count on articles
 								if(!hdfs.exists(new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.wordCountOutput"))))
 									queueTask(conf, new WordCountTask, "pl.gda.pg.eti.kask.kaw.wordCountInput", "pl.gda.pg.eti.kask.kaw.wordCountOutput")
-	
+
 								// dispose dictionary
 								CategorizationApplicationObject.logger.debug("Usuwanie slownika odmian")
 								TokenizerMapper.disposeDictionary
 								CategorizationApplicationObject.logger.debug("Usunieto, zwalnianie pamieci przez garbage collector..")
-	
+
 								// folding on articles
 								val foldOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.foldingOutput"))
-								if(hdfs.exists(foldOutputPath)) 
+								if(hdfs.exists(foldOutputPath))
 									hdfs.delete(foldOutputPath, true)
 								queueTask(conf, new FoldingClusterTask, "pl.gda.pg.eti.kask.kaw.foldingInput", "pl.gda.pg.eti.kask.kaw.foldingOutput")
-	
+
 								// cross validate articles
 								val cvOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationOutput"))
-								if(hdfs.exists(cvOutputPath)) 
+								if(hdfs.exists(cvOutputPath))
 									hdfs.delete(cvOutputPath, true)
 								queueTask(conf, new CrossValidationTask, "pl.gda.pg.eti.kask.kaw.crossvalidationInput", "pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
-	
+
 								// scores
 								val cvsOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput"))
-								if(hdfs.exists(cvsOutputPath)) 
+								if(hdfs.exists(cvsOutputPath))
 									hdfs.delete(cvsOutputPath, true)
 								queueTask(conf, new CrossValidationResultsTask, "pl.gda.pg.eti.kask.kaw.crossvalidationScoresInput", "pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput")
-	
+
 								// scores
 								val cvaOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput"))
-								if(hdfs.exists(cvaOutputPath)) 
+								if(hdfs.exists(cvaOutputPath))
 									hdfs.delete(cvaOutputPath, true)
 								queueTask(conf, new CrossValidationAverageCounterTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
-	
+
 								// read results
 								printDirContents(hdfs, cvaOutputPath)
 							}
@@ -205,7 +208,7 @@ object CategorizationApplicationObject {
 						logger.debug("Pobieram system plikow z konfiguracji")
 						val hdfs = FileSystem.get(conf)
 						logger.debug("Uruchamiam zczytywanie artykolow z wikidumps")
-						
+
 						val mainArgs = extractParametersAfterString("dump", args, 2)
 						val skipArgs = extractParametersAfterString("--skip", args, 1)
 						val maxArgs = extractParametersAfterString("--max", args, 1)
@@ -226,13 +229,15 @@ object CategorizationApplicationObject {
 						hdfs.close
 						return null
 					}
-					
-					attachTask("wordcount", conf, args, new WordCountTask, "pl.gda.pg.eti.kask.kaw.wordCountInput", "pl.gda.pg.eti.kask.kaw.wordCountOutput")
-					attachTask("classify", conf, args, new NoMatrixuSimilarityTask, "pl.gda.pg.eti.kask.kaw.classifierInput", "pl.gda.pg.eti.kask.kaw.classifierOutput")
-					attachTask("fold", conf, args, new FoldingClusterTask, "pl.gda.pg.eti.kask.kaw.foldingInput", "pl.gda.pg.eti.kask.kaw.foldingOutput")
-					attachTask("crossvalidate", conf, args, new CrossValidationTask, "pl.gda.pg.eti.kask.kaw.crossvalidationInput", "pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
-					attachTask("cvaverage", conf, args, new CrossValidationAverageCounterTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
-					attachTask("cvscores", conf, args, new CrossValidationResultsTask, "pl.gda.pg.eti.kask.kaw.crossvalidationScoresInput", "pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput")
+
+					if(!args.contains("--auto")) {
+						attachTask("wordcount", conf, args, new WordCountTask, "pl.gda.pg.eti.kask.kaw.wordCountInput", "pl.gda.pg.eti.kask.kaw.wordCountOutput")
+						attachTask("classify", conf, args, new NoMatrixuSimilarityTask, "pl.gda.pg.eti.kask.kaw.classifierInput", "pl.gda.pg.eti.kask.kaw.classifierOutput")
+						attachTask("fold", conf, args, new FoldingClusterTask, "pl.gda.pg.eti.kask.kaw.foldingInput", "pl.gda.pg.eti.kask.kaw.foldingOutput")
+						attachTask("crossvalidate", conf, args, new CrossValidationTask, "pl.gda.pg.eti.kask.kaw.crossvalidationInput", "pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
+						attachTask("cvaverage", conf, args, new CrossValidationAverageCounterTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
+						attachTask("cvscores", conf, args, new CrossValidationResultsTask, "pl.gda.pg.eti.kask.kaw.crossvalidationScoresInput", "pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput")
+					}
 
 					TokenizerMapper.disposeDictionary
 					return null
@@ -245,13 +250,13 @@ object CategorizationApplicationObject {
 			case e: Exception ⇒ e.printStackTrace
 		}
 	}
-	
+
 	private def queueTask(conf: Configuration, task: ClusterTask, inProperty: String, outProperty: String) = {
 		val inputDir = properties.getProperty(inProperty)
 		val outputDir = properties.getProperty(outProperty)
 		task.runTask(conf, Array[String](inputDir, outputDir))
 	}
-	
+
 	private def extractParametersAfterString(after: String, args: Array[String], howMany: Int): Array[String] = {
 		if(args.contains(after)) {
 			val ind = args.indexOf(after)
@@ -289,7 +294,7 @@ object CategorizationApplicationObject {
 			println(sc.nextLine())
 		}
 	}
-	
+
 	private def printDirContents(hdfs: FileSystem, dir: Path) {
 		val stat = hdfs.listStatus(dir)
 		stat.foreach { stat =>

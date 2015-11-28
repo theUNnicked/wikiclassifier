@@ -8,7 +8,6 @@ class NearestNeighboursCategoryExtractor {
 		val map = scala.collection.mutable.Map[String, Double]()
 		kNearestNeighbrours.foreach { x ⇒
 			if (x != null && !x.isEmpty) {
-			  // TODO: tu jest blad
 				val categoriesWithSimilarity = extractCategoriesWithSimilarityFromString(x)
 				if(categoriesWithSimilarity != null) {
   				val similarity = categoriesWithSimilarity._1
