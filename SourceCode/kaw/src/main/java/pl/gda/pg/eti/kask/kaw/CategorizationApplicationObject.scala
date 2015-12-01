@@ -99,8 +99,23 @@ object CategorizationApplicationObject {
 						}
 					}
 
-					val jarFile = properties.getProperty("pl.gda.pg.eti.kask.kaw.jarLocation")
-					conf.set("pl.gda.pg.eti.kask.kaw.jarLocation", if(jarFile == null) "target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar" else jarFile)
+					var classifyRepetitions = 1
+					try {
+						classifyRepetitions = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifyRepetitions", "1").toInt
+						if(classifyRepetitions < 1) {
+							conf.setInt("pl.gda.pg.eti.kask.kaw.classifyRepetitions", 1)
+						}
+						else {
+							conf.setInt("pl.gda.pg.eti.kask.kaw.classifyRepetitions", classifyRepetitions)
+						}
+					}
+					catch {
+						case e: Exception =>
+							conf.setInt("pl.gda.pg.eti.kask.kaw.classifyRepetitions", 1)
+					}
+
+					val jarFile = properties.getProperty("pl.gda.pg.eti.kask.kaw.jarLocation", "target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
+					conf.set("pl.gda.pg.eti.kask.kaw.jarLocation", jarFile)
 
 					conf.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName())
 					conf.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName())
@@ -138,6 +153,14 @@ object CategorizationApplicationObject {
 								val bIn = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierOutput")
 								val bK = properties.getProperty("pl.gda.pg.eti.kask.kaw.k")
 								println("Wyniki klasyfikacji:")
+								if(classifyRepetitions > 1) {
+									// TYLKO w celach testowych, nie usprawnia klasyfikatora
+									// ONLY for speed testing purpouses, does not improve classifier
+									for (i ← 0 to classifyRepetitions - 1) {
+										new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
+									}
+								}
+
 								val bestRes = new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
 								CategorizationApplicationObject.logger.debug("Uzyskano wyniki klasyfikacji")
 								bestRes.foreach { x ⇒ println(x) }
@@ -197,6 +220,13 @@ object CategorizationApplicationObject {
 							bK = properties.getProperty("pl.gda.pg.eti.kask.kaw.k")
 							if(bIn == null || bK == null)
 								throw new InvalidPropertiesException()
+						}
+						if(classifyRepetitions > 1) {
+							// TYLKO w celach testowych, nie usprawnia klasyfikatora
+							// ONLY for speed testing purpouses, does not improve classifier
+							for (i ← 0 to classifyRepetitions - 1) {
+								new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
+							}
 						}
 						val bestCats = new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
 						CategorizationApplicationObject.logger.debug("Uzyskano wyniki klasyfikacji")

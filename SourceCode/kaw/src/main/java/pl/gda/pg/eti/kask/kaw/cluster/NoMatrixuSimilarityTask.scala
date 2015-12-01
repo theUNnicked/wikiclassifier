@@ -103,6 +103,19 @@ class KnnReducer extends Reducer[Text, PairWritable, Text, Text] {
 		if (lists._2.isEmpty) {
 			return
 		}
+
+		val reps = context.getConfiguration.getInt("pl.gda.pg.eti.kask.kaw.classifyRepetitions", 1)
+		if(reps > 1) {
+			// TYLKO w celach testowych, nie usprawnia klasyfikatora
+			// ONLY for speed testing purpouses, does not improve classifier
+			for (i ← 0 to reps - 1) {
+				val repLists = unpacker.unpack(values)
+				val repNewArticleLists = KnnReducer.getNewArticleLists(context.getConfiguration)
+				val repDist = KnnReducer.distanceCounter.getDistance(repLists._1, repNewArticleLists._1)
+				val repResultStr = lists._2.foldLeft(repDist.toString()) { (str, cat) ⇒ str + "\t" + cat }
+			}
+		}
+
 		val newArticleLists = KnnReducer.getNewArticleLists(context.getConfiguration)
 		val dist = KnnReducer.distanceCounter.getDistance(lists._1, newArticleLists._1)
 

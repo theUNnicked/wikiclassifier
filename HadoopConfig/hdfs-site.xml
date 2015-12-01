@@ -18,6 +18,10 @@ limitations under the License. See accompanying LICENSE file.
 
 <configuration>
   <property>
+    <name>dfs.hosts.exclude</name>
+    <value>/macierz/home/143365sk/KAW/hadoop-2.6.1/etc/hadoop/excludes</value>
+  </property>
+  <property>
     <name>dfs.replication</name>
     <value>2</value>
   </property>
