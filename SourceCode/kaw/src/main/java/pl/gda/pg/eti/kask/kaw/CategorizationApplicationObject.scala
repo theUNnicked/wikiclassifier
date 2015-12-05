@@ -33,7 +33,7 @@ class CategorizationApplicationObject {}
 
 object CategorizationApplicationObject {
 
-	val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if ((p._2 / max) > max * 0.7) true else false }
+	val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if ((p._2 / max) >= 0.2) true else false }
 
 	private val logger = LoggerFactory.getLogger(classOf[CategorizationApplicationObject])
 	private val properties = new Properties
