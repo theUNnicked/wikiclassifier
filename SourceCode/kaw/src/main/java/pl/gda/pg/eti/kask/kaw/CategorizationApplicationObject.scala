@@ -126,8 +126,8 @@ object CategorizationApplicationObject {
 					var classifyPrecision = 0.8
 					try {
 						classifyPrecision = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierPrecision", "0.8").toDouble
-						if(classifyPrecision < 1) {
-							conf.setInt("pl.gda.pg.eti.kask.kaw.classifierPrecision", 1)
+						if(classifyPrecision < 0) {
+							conf.setDouble("pl.gda.pg.eti.kask.kaw.classifierPrecision", 0.8)
 						}
 						else {
 							conf.setDouble("pl.gda.pg.eti.kask.kaw.classifierPrecision", classifyPrecision)
@@ -214,6 +214,30 @@ object CategorizationApplicationObject {
 								queueTask(conf, new CrossValidationTask, "pl.gda.pg.eti.kask.kaw.crossvalidationInput", "pl.gda.pg.eti.kask.kaw.crossvalidationOutput")
 
 								// scores
+								val cvsOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput"))
+								if(hdfs.exists(cvsOutputPath))
+									hdfs.delete(cvsOutputPath, true)
+								queueTask(conf, new CrossValidationResultsTask, "pl.gda.pg.eti.kask.kaw.crossvalidationScoresInput", "pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput")
+
+								// scores
+								val cvaOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput"))
+								if(hdfs.exists(cvaOutputPath))
+									hdfs.delete(cvaOutputPath, true)
+								queueTask(conf, new CrossValidationAverageCounterTask, "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreInput", "pl.gda.pg.eti.kask.kaw.crossvalidationAverageScoreOutput")
+
+								// read results
+								printDirContents(hdfs, cvaOutputPath)
+							}
+							else if (args(0).equals("cvscores")) {
+							  val hdfs = FileSystem.get(conf)
+							  
+							  val cvOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationOutput"))
+								if(!hdfs.exists(cvOutputPath)) {
+								  System.out.println("Run crossvalidation first")
+								  System.exit(0)
+								}
+							  
+							  // scores
 								val cvsOutputPath = new Path(properties.getProperty("pl.gda.pg.eti.kask.kaw.crossvalidationScoresOutput"))
 								if(hdfs.exists(cvsOutputPath))
 									hdfs.delete(cvsOutputPath, true)
