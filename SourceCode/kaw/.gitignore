@@ -20,4 +20,6 @@ cvScoresOutput/
 cvAverageOutput/
 crossvalidationOutput/
 logs/
+.idea/
+kaw.iml
 dictionary.txt

@@ -33,7 +33,16 @@ class CategorizationApplicationObject {}
 
 object CategorizationApplicationObject {
 
-	val strategyBest70Percent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if ((p._2 / max) >= 0.2) true else false }
+  private var percentage = -1.0
+  
+  def getStrategy(conf: Configuration) = {
+    if(percentage < 0) {
+      percentage = conf.getDouble("pl.gda.pg.eti.kask.kaw.classifierPrecision", 0.8)
+    }
+    strategyBestPercent
+  }
+  
+	val strategyBestPercent: (Double, Tuple2[String, Double]) ⇒ Boolean = { (max, p) ⇒ if ((p._2 / max) >= percentage) true else false }
 
 	private val logger = LoggerFactory.getLogger(classOf[CategorizationApplicationObject])
 	private val properties = new Properties
@@ -113,6 +122,22 @@ object CategorizationApplicationObject {
 						case e: Exception =>
 							conf.setInt("pl.gda.pg.eti.kask.kaw.classifyRepetitions", 1)
 					}
+					
+					var classifyPrecision = 0.8
+					try {
+						classifyPrecision = properties.getProperty("pl.gda.pg.eti.kask.kaw.classifierPrecision", "0.8").toDouble
+						if(classifyPrecision < 1) {
+							conf.setInt("pl.gda.pg.eti.kask.kaw.classifierPrecision", 1)
+						}
+						else {
+							conf.setDouble("pl.gda.pg.eti.kask.kaw.classifierPrecision", classifyPrecision)
+						}
+					}
+					catch {
+						case e: Exception =>
+							conf.setDouble("pl.gda.pg.eti.kask.kaw.classifierPrecision", 0.8)
+					}
+					
 
 					val jarFile = properties.getProperty("pl.gda.pg.eti.kask.kaw.jarLocation", "target/kaw-0.0.1-SNAPSHOT-jar-with-dependencies.jar")
 					conf.set("pl.gda.pg.eti.kask.kaw.jarLocation", jarFile)
@@ -125,7 +150,7 @@ object CategorizationApplicationObject {
 					conf.set("pl.gda.pg.eti.kask.kaw.newArticleOutput", newArticleFile)
 					conf.set("pl.gda.pg.eti.kask.kaw.dictionaryLocation", dictionaryLocation)
 					conf.set("pl.gda.pg.eti.kask.kaw.kNeighbours", properties.getProperty("pl.gda.pg.eti.kask.kaw.k"))
-
+					
 					if (args.length == 2) {
 						if (args(1).equals("--auto")) {
 							if (args(0).equals("classify")) {
@@ -157,11 +182,11 @@ object CategorizationApplicationObject {
 									// TYLKO w celach testowych, nie usprawnia klasyfikatora
 									// ONLY for speed testing purpouses, does not improve classifier
 									for (i ← 0 to classifyRepetitions - 1) {
-										new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
+										new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(getStrategy(conf))
 									}
 								}
 
-								val bestRes = new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
+								val bestRes = new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(getStrategy(conf))
 								CategorizationApplicationObject.logger.debug("Uzyskano wyniki klasyfikacji")
 								bestRes.foreach { x ⇒ println(x) }
 								return null
@@ -225,10 +250,10 @@ object CategorizationApplicationObject {
 							// TYLKO w celach testowych, nie usprawnia klasyfikatora
 							// ONLY for speed testing purpouses, does not improve classifier
 							for (i ← 0 to classifyRepetitions - 1) {
-								new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
+								new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(getStrategy(conf))
 							}
 						}
-						val bestCats = new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(strategyBest70Percent)
+						val bestCats = new CosineSimilarityIndexCounter().getBestCategories(conf, bIn, bK.toInt, true)(getStrategy(conf))
 						CategorizationApplicationObject.logger.debug("Uzyskano wyniki klasyfikacji")
 						bestCats.foreach { x ⇒ println(x) }
 						return null

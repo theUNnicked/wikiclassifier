@@ -62,7 +62,7 @@ class CrossValidationResultsReducer extends Reducer[Text, Text, Text, Text] {
 		val k = context.getConfiguration.getInt("pl.gda.pg.eti.kask.kaw.kNeighbours", 15)
 		val neighbours = extractBestKNeighbours(k, values)
 		try {
-			val categories = extractPredictedCategories(neighbours)
+			val categories = extractPredictedCategories(neighbours, context.getConfiguration)
 			// TP, FP, FN
 			val compared = compare(expectedCategories, categories)
 
@@ -90,14 +90,14 @@ class CrossValidationResultsReducer extends Reducer[Text, Text, Text, Text] {
 		}
 	}
 
-	private def extractPredictedCategories(kNeighbours: Array[String]) = {
+	private def extractPredictedCategories(kNeighbours: Array[String], conf: Configuration) = {
 		val extractor = new NearestNeighboursCategoryExtractor
 		val extractCategoriesWithSimilarityFromString = { s: String ⇒
 			val predictionString = extractPredictionString(s)
 			val split = predictionString.substring(predictionString.indexOf('[') + 1, predictionString.indexOf(']')).split(",")
 			(split(0).toDouble, split.takeRight(split.length - 1).toList)
 		}
-		val passedByThresholdingStrategy = CategorizationApplicationObject.strategyBest70Percent
+		val passedByThresholdingStrategy = CategorizationApplicationObject.getStrategy(conf)
 		extractor.extractCategories(kNeighbours, extractCategoriesWithSimilarityFromString, passedByThresholdingStrategy)
 	}
 
