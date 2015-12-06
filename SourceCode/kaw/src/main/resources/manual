@@ -35,10 +35,12 @@ DESCRIPTIONS
 		results are put into OUT_DIR, when --auto flag supplied, folding, crossvalidation and score counting
 		and word counting (if necessary) is performed automatically.
 	
-	cvscores IN_DIR OUT_DIR
+	cvscores [--auto] IN_DIR OUT_DIR
 		counts scores for crossvalidation, IN_DIR should be crossvalidation output directory, results are
-		put into OUT_DIR.
+		put into OUT_DIR, when --auto flag supplied, program will count scores without time consuming
+		crossvalidation, but note that the crossvalidation must be performed once before launching
+		this operation.
 	
-	cvaverage in out
+	cvaverage IN_DIR OUT_DIR
 		counts average score for crossvalidation, IN_DIR should be cv scores output directory, results are
 		put into OUT_DIR.
